@@ -46,7 +46,7 @@ If you cloned this repository locally, copy it into your OpenClaw workspace:
 
 ```bash
 mkdir -p ~/.openclaw/workspace/skills
-cp -R bnbnbn ~/.openclaw/workspace/skills/alpha-radar-report
+cp -R alpha-radar-openclaw-skill ~/.openclaw/workspace/skills/alpha-radar-report
 ```
 
 Then refresh skills or restart OpenClaw.
@@ -56,7 +56,7 @@ Then refresh skills or restart OpenClaw.
 After you push this repo to GitHub:
 
 ```bash
-openclaw skills add https://github.com/0xXIAOc/bnbnbn
+openclaw skills add https://github.com/0xXIAOc/alpha-radar-openclaw-skill
 ```
 
 ## Also install official Binance skills
@@ -73,6 +73,7 @@ npx skills add binance/binance-skills-hub
 npm install
 npm run report
 npm run square
+npm run check
 ```
 
 Generated files:
@@ -97,6 +98,24 @@ Minimal shape:
   "conclusion": []
 }
 ```
+
+## Supported input modes
+
+The renderer supports both:
+
+### File input
+
+```bash
+node scripts/render-report.js --input examples/sample-data.json --style report
+```
+
+### Stdin / pipe input
+
+```bash
+cat examples/sample-data.json | node scripts/render-report.js --style report
+```
+
+This makes it easier for OpenClaw to pass normalized JSON directly into the formatter.
 
 ## Recommended OpenClaw workflow
 
@@ -126,10 +145,8 @@ See:
 Current repository:
 
 ```text
-https://github.com/0xXIAOc/bnbnbn
+https://github.com/0xXIAOc/alpha-radar-openclaw-skill
 ```
-
-If you later rename the repo to something more descriptive, update the links in this file and in `SKILL.md`.
 
 ## Suggested Git commit flow
 
@@ -138,6 +155,6 @@ git init
 git add .
 git commit -m "feat: initial Alpha Radar OpenClaw skill"
 git branch -M main
-git remote add origin https://github.com/0xXIAOc/bnbnbn.git
+git remote add origin https://github.com/0xXIAOc/alpha-radar-openclaw-skill.git
 git push -u origin main
 ```
