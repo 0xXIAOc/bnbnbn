@@ -1,8 +1,8 @@
 {
   "name": "alpha-radar-openclaw-skill",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "GitHub-ready OpenClaw custom skill for generating Binance-style market reports.",
+  "description": "OpenClaw custom skill that renders Binance research data into a stable report or Binance Square draft.",
   "license": "MIT",
   "type": "commonjs",
   "bin": {
@@ -10,8 +10,10 @@
   },
   "scripts": {
     "report": "node scripts/render-report.js --input examples/sample-data.json --style report --output examples/sample-report.md",
+    "report:stdout": "node scripts/render-report.js --input examples/sample-data.json --style report",
     "square": "node scripts/render-report.js --input examples/sample-data.json --style square --output examples/sample-square.txt",
-    "check": "node scripts/render-report.js --input examples/sample-data.json --style report > /dev/null"
+    "square:stdout": "node scripts/render-report.js --input examples/sample-data.json --style square",
+    "check": "node scripts/render-report.js --input examples/sample-data.json --style report --output .tmp-check-report.md && node scripts/render-report.js --input examples/sample-data.json --style square --output .tmp-check-square.txt && node -e \"require('fs').rmSync('.tmp-check-report.md',{force:true});require('fs').rmSync('.tmp-check-square.txt',{force:true});\""
   },
   "engines": {
     "node": ">=18"
