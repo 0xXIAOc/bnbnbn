@@ -1,7 +1,8 @@
 ---
 name: alpha-radar-report
-description: Generate a structured market report (market theme, watchlist, risk alerts, smart money appendix, conclusion) from Binance skills data, with an optional Binance Square draft.
-metadata: {"version":"0.3.0","author":"0xXIAOc","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}
+description: Generate Binance daily market reports, Solana/BSC watchlists, risk alerts, smart-money appendices, and Binance Square drafts from normalized Binance skills data.
+metadata: {"version":"0.4.0","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
+homepage: https://github.com/0xXIAOc/alpha-radar-openclaw-skill
 user-invocable: true
 ---
 
@@ -11,14 +12,16 @@ Use this skill when the user wants any of the following:
 
 - 生成日报 / 周报 / Watchlist Delta Report
 - 按固定栏目整理 Binance 数据
+- 生成 Solana / BSC 研究摘要
 - 输出 Binance Square 可发布文案
 - 把热点主线、值得看名单、风险警报整理成一页报告
+- 做“聪明钱 + 风控 + 热度”综合体检
 
 ## Goal
 
 Turn noisy market data into a repeatable and easy-to-read report.
 
-This skill is an orchestrator. It should reuse installed official Binance skills for data collection, then normalize the raw results into the schema used by this repository, then render the final report with the local formatter.
+This skill is an orchestrator. It should reuse installed official Binance skills for data collection, normalize the raw results into the schema used by this repository, then render the final report with the local formatter.
 
 ## Data collection order
 
