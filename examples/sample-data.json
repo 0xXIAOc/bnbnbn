@@ -1,0 +1,71 @@
+{
+  "chain": "Solana",
+  "window": "24h",
+  "generatedAt": "2026-03-10T12:00:00Z",
+  "marketTheme": {
+    "summary": "Meme 与 smart money 共振，热点开始从单点标的扩散到叙事层，但风险偏好仍有分歧。",
+    "signals": [
+      "Trending 与 Top Search 集中在 3 个 Meme 名字",
+      "Social Hype 显示叙事扩散，而不只是单点拉升",
+      "Smart Money Inflow 偏向流动性更高的候选"
+    ],
+    "stance": "观察确认"
+  },
+  "watchlist": [
+    {
+      "symbol": "AAA",
+      "verdict": "值得看",
+      "reason": "active buy 信号持续，流动性与持仓分散度同时过线。",
+      "metrics": {
+        "price": "0.0123",
+        "volume24h": "2.1M",
+        "liquidity": "520k",
+        "holders": 1800,
+        "top10Pct": "18%",
+        "smartMoney": "active buy / 5 addresses",
+        "riskLevel": "LOW"
+      },
+      "risk": "短线热度偏高，若情绪回撤需观察承接。",
+      "next": "继续追踪 smart money 是否延续流入。"
+    },
+    {
+      "symbol": "BBB",
+      "verdict": "继续观察",
+      "reason": "热度有提升，但持有人扩散仍未完全跟上。",
+      "metrics": {
+        "price": "0.0045",
+        "volume24h": "640k",
+        "liquidity": "310k",
+        "holders": 620,
+        "top10Pct": "24%",
+        "smartMoney": "active buy / 2 addresses",
+        "riskLevel": "MEDIUM"
+      },
+      "risk": "holders 略低于理想安全区间。",
+      "next": "观察 holders 是否突破 800。"
+    }
+  ],
+  "riskAlerts": [
+    {
+      "symbol": "CCC",
+      "reason": "Top10 持仓过高，同时存在较高合约风险。",
+      "flags": [
+        "Top10=41%",
+        "riskLevel=HIGH",
+        "sellTax=15%"
+      ]
+    }
+  ],
+  "walletAppendix": {
+    "summary": "2 个高表现地址同时关注 AAA，而 BBB 仍主要由单地址试探性参与。",
+    "notes": [
+      "AAA 出现多地址共识",
+      "BBB 的钱包行为与社媒热度尚未完全共振"
+    ]
+  },
+  "conclusion": [
+    "今天更值得关注热度、资金与风控同时过线的标的。",
+    "高热度但高集中度的名字应优先回避。",
+    "钱包行为适合作为证据，但不应单独成为结论。"
+  ]
+}
