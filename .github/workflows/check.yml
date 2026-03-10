@@ -5,12 +5,16 @@ on:
   pull_request:
 
 jobs:
-  smoke-test:
+  validate:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm install
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
       - run: npm run check
