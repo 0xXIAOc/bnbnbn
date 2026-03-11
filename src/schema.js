@@ -12,6 +12,24 @@ const ConfidenceSchema = z.enum(['high', 'medium', 'low']).default('medium');
 
 const ActionSchema = z.enum(['看', '观察', '回避']).default('观察');
 
+const PreferencesSchema = z
+  .object({
+    profile: z.enum(['cautious', 'balanced', 'aggressive']).default('balanced'),
+    risk: z.enum(['low', 'balanced', 'high']).default('balanced'),
+    topN: z.number().int().min(1).max(10).default(3),
+    lang: z.enum(['zh', 'en']).default('zh'),
+    wallet: z.boolean().default(true),
+    preview: z.boolean().default(true)
+  })
+  .default({
+    profile: 'balanced',
+    risk: 'balanced',
+    topN: 3,
+    lang: 'zh',
+    wallet: true,
+    preview: true
+  });
+
 const UpstreamCallSchema = z.object({
   skill: z.string(),
   status: z.enum(['ok', 'failed', 'skipped', 'partial']).default('ok'),
@@ -66,6 +84,7 @@ const ReportDataSchema = z.object({
   chainScope: ScopeSchema.default('auto'),
   selectedChains: z.array(z.string()).default([]),
   previewOnly: z.boolean().default(true),
+  preferences: PreferencesSchema,
   chain: z.string().default('Auto'),
   window: z.string().default('24h'),
   generatedAt: z.string().optional(),
@@ -106,6 +125,7 @@ module.exports = {
   ModeSchema,
   ConfidenceSchema,
   ActionSchema,
+  PreferencesSchema,
   ReportDataSchema,
   validateReportData
 };
