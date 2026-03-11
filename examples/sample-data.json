@@ -1,4 +1,7 @@
 {
+  "title": "",
+  "queryType": "market",
+  "tokenQuery": {},
   "mode": "tg",
   "chainScope": "auto",
   "selectedChains": ["Solana", "BSC"],
@@ -9,7 +12,9 @@
     "topN": 3,
     "lang": "zh",
     "wallet": true,
-    "preview": true
+    "preview": true,
+    "squareDisclosureEnabled": false,
+    "squareDisclosureAskEveryTime": true
   },
   "chain": "Auto",
   "window": "24h",
@@ -47,6 +52,88 @@
     ],
     "stance": "观察确认"
   },
+  "leaderboards": {
+    "gainersTop3": [
+      {
+        "symbol": "Distorted",
+        "chain": "Solana",
+        "metricLabel": "涨幅",
+        "metricValue": "+1238%"
+      },
+      {
+        "symbol": "SOS",
+        "chain": "Solana",
+        "metricLabel": "涨幅",
+        "metricValue": "+312%"
+      },
+      {
+        "symbol": "ROBO",
+        "chain": "BSC",
+        "metricLabel": "涨幅",
+        "metricValue": "+188%"
+      }
+    ],
+    "losersTop3": [
+      {
+        "symbol": "JUP",
+        "chain": "Solana",
+        "metricLabel": "跌幅",
+        "metricValue": "-4.18%"
+      },
+      {
+        "symbol": "OLDX",
+        "chain": "BSC",
+        "metricLabel": "跌幅",
+        "metricValue": "-8.41%"
+      },
+      {
+        "symbol": "WEAK",
+        "chain": "Solana",
+        "metricLabel": "跌幅",
+        "metricValue": "-11.52%"
+      }
+    ],
+    "exchangeHotTop3": [
+      {
+        "symbol": "PUMP",
+        "chain": "Solana",
+        "metricLabel": "热度",
+        "metricValue": "91"
+      },
+      {
+        "symbol": "TRUMP",
+        "chain": "Solana",
+        "metricLabel": "热度",
+        "metricValue": "88"
+      },
+      {
+        "symbol": "CAKE",
+        "chain": "BSC",
+        "metricLabel": "热度",
+        "metricValue": "84"
+      }
+    ],
+    "walletHotTop3": [
+      {
+        "symbol": "CAKE",
+        "chain": "BSC",
+        "metricLabel": "热度",
+        "metricValue": "smart money active"
+      },
+      {
+        "symbol": "Distorted",
+        "chain": "Solana",
+        "metricLabel": "热度",
+        "metricValue": "wallet attention"
+      },
+      {
+        "symbol": "PUMP",
+        "chain": "Solana",
+        "metricLabel": "热度",
+        "metricValue": "whale watch"
+      }
+    ]
+  },
   "watchlist": [
     {
       "symbol": "Distorted",
@@ -74,30 +161,6 @@
       "delta": "new"
     },
     {
-      "symbol": "PUMP",
-      "chain": "Solana",
-      "verdict": "看",
-      "action": "看",
-      "score": 76,
-      "confidence": "medium",
-      "reason": "更像主流流动性锚，适合作为 Solana 风险偏好的温度计，而不是弹性最大的爆发票。",
-      "metrics": {
-        "price": "0.0051",
-        "priceChange24h": "-0.84%",
-        "volume24h": "21.01M",
-        "liquidity": "21.08M",
-        "marketCap": "2.00B",
-        "holders": 117473,
-        "top10Pct": "73.92%",
-        "smartMoney": "一般",
-        "riskLevel": "LOW"
-      },
-      "risk": "集中度高，更适合观察主流承接，不适合把它当低风险品种。",
-      "next": "观察资金是否从高波动小票回流主流流动性资产。",
-      "sourceFlags": ["热榜", "审计"],
-      "delta": "steady"
-    },
-    {
       "symbol": "CAKE",
       "chain": "BSC",
       "verdict": "看",
@@ -120,6 +183,30 @@
       "next": "观察 smart money 是否继续维持 active buy，以及成交能否持续扩张。",
       "sourceFlags": ["热榜", "信号", "审计"],
       "delta": "new"
+    },
+    {
+      "symbol": "PUMP",
+      "chain": "Solana",
+      "verdict": "看",
+      "action": "看",
+      "score": 76,
+      "confidence": "medium",
+      "reason": "更像主流流动性锚，适合作为 Solana 风险偏好的温度计，而不是弹性最大的爆发票。",
+      "metrics": {
+        "price": "0.0051",
+        "priceChange24h": "-0.84%",
+        "volume24h": "21.01M",
+        "liquidity": "21.08M",
+        "marketCap": "2.00B",
+        "holders": 117473,
+        "top10Pct": "73.92%",
+        "smartMoney": "一般",
+        "riskLevel": "LOW"
+      },
+      "risk": "集中度高，更适合观察主流承接，不适合把它当低风险品种。",
+      "next": "观察资金是否从高波动小票回流主流流动性资产。",
+      "sourceFlags": ["热榜", "审计"],
+      "delta": "steady"
     }
   ],
   "riskAlerts": [
