@@ -1,12 +1,12 @@
 ---
 name: alpha-radar-report
 description: Use this skill when the user asks to generate a Binance daily market report, Solana/BSC report, global report, Watchlist Delta Report, Alpha Radar report, risk alert report, smart money appendix, or Binance Square preview. Trigger strongly on requests like “生成今日日报”, “按 Alpha Radar 模板生成日报”, “生成全网 watchlist”, “生成风险警报”, “生成 Binance Square 预览”, “只预览不发广场”, “给我一个短版”, “给我一个 TG 版”.
-metadata: {"version":"0.6.0","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
+metadata: {"version":"0.7.0","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
 homepage: https://github.com/0xXIAOc/alpha-radar-openclaw-skill
 user-invocable: true
 ---
 
-# Alpha Radar Report v2
+# Alpha Radar Report v3
 
 ## Default behavior
 
@@ -16,12 +16,15 @@ When invoked without detailed arguments, default to:
 - scope: `auto`
 - window: `24h`
 - previewOnly: `true`
+- profile: `balanced`
+- topN: `3`
+- lang: `zh`
 
 Meaning:
-- **默认短版**
-- **默认多链**
-- **默认预览**
-- **默认评分化**
+- 默认短版
+- 默认多链
+- 默认预览
+- 默认评分化
 
 ## Scope definitions
 
@@ -36,9 +39,30 @@ If the user does not specify a chain, prefer `auto`.
 
 - `tg`: short Telegram-friendly preview
 - `report`: full research report
-- `square`: concise Binance Square preview
+- `square`: concise Binance Square preview, directly postable pure text
 
 If the user does not specify a mode, prefer `tg`.
+
+## Preference parsing
+
+Interpret these naturally when the user includes them:
+
+- `scope=auto|global|solana|bsc`
+- `mode=tg|report|square`
+- `profile=cautious|balanced|aggressive`
+- `risk=low|balanced|high`
+- `top=3|5`
+- `lang=zh|en`
+- `wallet=on|off`
+- `preview=on|off`
+
+Examples:
+- `/alpha_radar_report`
+- `/alpha_radar_report global`
+- `/alpha_radar_report report`
+- `/alpha_radar_report mode=square scope=global top=3`
+- `/alpha_radar_report scope=bsc profile=cautious wallet=off`
+- `/alpha_radar_report mode=tg scope=auto risk=balanced`
 
 ## Purpose
 
@@ -50,7 +74,7 @@ Alpha Radar turns upstream Binance skill outputs into a stable research workflow
 4. 今日观察钱包 / 聪明钱附录
 5. 今日结论
 
-This skill should prioritize **real upstream Binance skill calls in the current turn** before writing any report.
+This skill should prioritize real upstream Binance skill calls in the current turn before writing any report.
 
 ## Strong invocation rule
 
@@ -108,10 +132,13 @@ Infer or read:
   - `tg`
   - `report`
   - `square`
-- whether the user wants:
-  - report preview
-  - square preview
-  - publish after confirmation
+- preferences:
+  - `profile`
+  - `risk`
+  - `top`
+  - `lang`
+  - `wallet`
+  - `preview`
 
 ### Step 2: Run upstream Binance skill calls
 Use the required upstream skills in this order:
@@ -140,6 +167,7 @@ It should contain:
 - `chainScope`
 - `selectedChains`
 - `previewOnly`
+- `preferences`
 - `chain`
 - `window`
 - `generatedAt`
@@ -151,7 +179,6 @@ It should contain:
 - `conclusion`
 
 ### Step 4: Render report
-Use the local formatter.
 
 For Telegram-friendly short preview:
 
@@ -171,57 +198,6 @@ For Square preview:
 node {baseDir}/scripts/render-report.js --input <json-path> --style square
 ```
 
-## Report quality rules
-
-### 今日市场主线
-- Must be based on actual market attention data from this turn.
-- Separate:
-  - search heat
-  - social/attention heat
-  - smart-money flow
-- End with one stance:
-  - 更偏追热
-  - 观察确认
-  - 风险控制
-
-### 今日值得看名单
-- Prefer a scored shortlist.
-- Each token should include:
-  - score
-  - confidence
-  - action
-  - source flags
-  - key reason
-  - current risk
-- `tg` mode: at most 3 names
-- `report` mode: at most 5 names
-- If only 1–2 names meet the threshold, output only 1–2 names.
-
-### 今日风险警报
-- Prefer concrete warnings:
-  - high tax
-  - high-risk contract
-  - weak liquidity
-  - too few holders
-  - concentrated ownership
-  - expired signal
-- Separate:
-  - 合约风险
-  - 交易风险
-
-### 今日观察钱包 / 聪明钱附录
-- Wallet behavior is supporting evidence only.
-- It must not become the headline of the report.
-- If `query-address-info` was not run, say:
-  - 本轮未成功调用 `query-address-info`，因此附录仅保留为空或简化说明。
-
-### 今日结论
-- Keep it short and decision-focused.
-- `tg` mode: 2–4 lines
-- `report` mode: 3–5 lines
-- Always end with:
-  - DYOR。以上仅为研究整理，不构成任何建议。
-
 ## Output discipline
 
 - Prefer short actionable output in `tg` mode.
@@ -232,20 +208,19 @@ node {baseDir}/scripts/render-report.js --input <json-path> --style square
 - Never silently skip upstream Binance skills when they are available.
 - If all required upstream skills fail, output a clearly labeled fallback preview, not a fake finished report.
 
-## Shorthand intent examples
+## Square mode rules
 
-Interpret these naturally:
-
-- `/alpha_radar_report`
-  - default to `tg + auto + 24h + preview`
-- `/alpha_radar_report global`
-  - `tg + global + 24h + preview`
-- `/alpha_radar_report report`
-  - `report + auto + 24h + preview`
-- `/alpha_radar_report bsc`
-  - `tg + bsc + 24h + preview`
-- `/alpha_radar_report square`
-  - `square + auto + 24h + preview`
+In `square` mode:
+- Do not output long sections like “本轮已依次调用……”
+- Do not output verbose engineering wording
+- Prefer a directly postable format:
+  - 标题
+  - 主线
+  - Top 3
+  - 风险
+  - 结论
+  - DYOR
+- Keep it readable as a standalone pure-text Binance Square post
 
 ## Publish safety
 
