@@ -4,17 +4,27 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const sample = require('../examples/sample-data.json');
 const { validateReportData } = require('../src/schema');
-const { renderReport, renderSquare } = require('../src/render');
+const { renderTg, renderReport, renderSquare } = require('../src/render');
 
-test('validateReportData accepts the sample payload', () => {
+test('validateReportData accepts the v3 sample payload', () => {
   const result = validateReportData(sample);
-  assert.equal(result.chain, 'Solana');
-  assert.equal(result.watchlist.length, 2);
+  assert.equal(result.mode, 'tg');
+  assert.equal(result.chainScope, 'auto');
+  assert.equal(result.preferences.topN, 3);
+  assert.equal(result.watchlist.length, 3);
+});
+
+test('renderTg produces a short telegram-friendly output', () => {
+  const output = renderTg(validateReportData(sample));
+  assert.match(output, /Alpha Radar \| Auto/);
+  assert.match(output, /模式：TG 简版预览/);
+  assert.match(output, /Top：/);
+  assert.match(output, /风险：/);
 });
 
 test('renderReport includes the five required sections', () => {
   const output = renderReport(validateReportData(sample));
-  assert.match(output, /# 今日多维体检日报/);
+  assert.match(output, /## 0、上游调用/);
   assert.match(output, /## 一、今日市场主线/);
   assert.match(output, /## 二、今日值得看名单/);
   assert.match(output, /## 三、今日风险警报/);
@@ -22,26 +32,24 @@ test('renderReport includes the five required sections', () => {
   assert.match(output, /## 五、今日结论/);
 });
 
-test('renderSquare produces a concise square draft', () => {
+test('renderSquare produces a directly postable square-style draft', () => {
   const output = renderSquare(validateReportData(sample));
-  assert.match(output, /Watchlist Delta/);
+  assert.match(output, /Alpha Radar｜Auto/);
   assert.match(output, /值得看：/);
-  assert.match(output, /风险警报：/);
+  assert.match(output, /风险：/);
+  assert.match(output, /DYOR/);
 });
 
-test('empty arrays still render fallback text', () => {
+test('wallet=off hides wallet appendix details in report mode', () => {
   const data = validateReportData({
-    chain: 'BSC',
-    window: '7d',
-    marketTheme: {},
-    watchlist: [],
-    riskAlerts: [],
-    walletAppendix: {},
-    conclusion: []
+    ...sample,
+    mode: 'report',
+    preferences: {
+      ...sample.preferences,
+      wallet: false
+    }
   });
 
   const output = renderReport(data);
-  assert.match(output, /暂无符合条件的标的/);
-  assert.match(output, /今日未发现需要单独高亮的风险样本/);
-  assert.match(output, /暂无附录数据/);
+  assert.match(output, /本轮按偏好设置关闭钱包附录/);
 });
