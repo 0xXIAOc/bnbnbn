@@ -16,7 +16,7 @@ function parseArgs(argv) {
 
     if (token === '--input') {
       args.input = argv[++i];
-    } else if (token === '--style') {
+    } else if (token === '--style' || token === '--mode') {
       args.style = argv[++i];
     } else if (token === '--output') {
       args.output = argv[++i];
@@ -30,6 +30,16 @@ function parseArgs(argv) {
       args.window = argv[++i];
     } else if (token === '--preview') {
       args.preview = argv[++i];
+    } else if (token === '--profile') {
+      args.profile = argv[++i];
+    } else if (token === '--risk') {
+      args.risk = argv[++i];
+    } else if (token === '--top') {
+      args.top = argv[++i];
+    } else if (token === '--lang') {
+      args.lang = argv[++i];
+    } else if (token === '--wallet') {
+      args.wallet = argv[++i];
     } else if (token === '--help' || token === '-h') {
       args.help = true;
     } else {
@@ -56,7 +66,12 @@ function usage() {
     '  --scope <scope>         auto | global | solana | bsc | base | eth',
     '  --chain <chain>         Override human-readable chain label.',
     '  --window <window>       Override time window, e.g. 24h.',
-    '  --preview <bool>        true | false'
+    '  --preview <bool>        true | false',
+    '  --profile <value>       cautious | balanced | aggressive',
+    '  --risk <value>          low | balanced | high',
+    '  --top <n>               shortlist size',
+    '  --lang <value>          zh | en',
+    '  --wallet <bool>         true | false'
   ].join('\n');
 }
 
@@ -98,6 +113,7 @@ function normalizeScope(value) {
   if (normalized === 'sol') return 'solana';
   if (normalized === 'ethereum') return 'ethereum';
   if (normalized === 'eth') return 'eth';
+
   if (['auto', 'global', 'solana', 'bsc', 'base', 'eth', 'ethereum', 'custom'].includes(normalized)) {
     return normalized;
   }
@@ -116,33 +132,48 @@ function normalizeStyle(value) {
   throw new Error(`Invalid style: ${value}. Expected "tg", "report", or "square".`);
 }
 
-function normalizePreview(value, fallback = true) {
+function normalizeBoolean(value, fallback) {
   if (value === undefined || value === null || value === '') return fallback;
   const normalized = String(value).trim().toLowerCase();
-  if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
-  if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+  if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
   return fallback;
+}
+
+function normalizeTop(value, fallback = 3) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(1, Math.min(Math.round(parsed), 10));
 }
 
 function normalizeData(raw, args = {}) {
   const validated = validateReportData(raw);
 
-  const inferredScope =
-    normalizeScope(args.scope) ||
-    validated.chainScope ||
-    (validated.chain && validated.chain !== 'Auto' ? normalizeScope(validated.chain) : 'auto');
-
-  const mode = normalizeStyle(args.style || validated.mode || 'tg');
-
-  return {
+  const merged = {
     ...validated,
-    mode,
-    chainScope: inferredScope || 'auto',
+    mode: normalizeStyle(args.style || validated.mode || 'tg'),
+    chainScope:
+      normalizeScope(args.scope) ||
+      validated.chainScope ||
+      (validated.chain && validated.chain !== 'Auto' ? normalizeScope(validated.chain) : 'auto') ||
+      'auto',
     title: args.title || validated.title || '',
     chain: args.chain || validated.chain || 'Auto',
     window: args.window || validated.window || '24h',
-    previewOnly: normalizePreview(args.preview, validated.previewOnly !== false)
+    previewOnly: normalizeBoolean(args.preview, validated.previewOnly !== false),
+    preferences: {
+      ...(validated.preferences || {}),
+      ...(args.profile ? { profile: String(args.profile).trim().toLowerCase() } : {}),
+      ...(args.risk ? { risk: String(args.risk).trim().toLowerCase() } : {}),
+      ...(args.lang ? { lang: String(args.lang).trim().toLowerCase() } : {}),
+      ...(args.top !== undefined ? { topN: normalizeTop(args.top, validated.preferences?.topN || 3) } : {}),
+      ...(args.wallet !== undefined ? { wallet: normalizeBoolean(args.wallet, validated.preferences?.wallet !== false) } : {}),
+      ...(args.preview !== undefined ? { preview: normalizeBoolean(args.preview, validated.preferences?.preview !== false) } : {})
+    }
   };
+
+  return validateReportData(merged);
 }
 
 function writeOutputIfNeeded(outputPath, content) {
