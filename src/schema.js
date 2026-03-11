@@ -8,6 +8,8 @@ const ScopeSchema = z
 
 const ModeSchema = z.enum(['tg', 'report', 'square']).default('tg');
 
+const QueryTypeSchema = z.enum(['market', 'token']).default('market');
+
 const ConfidenceSchema = z.enum(['high', 'medium', 'low']).default('medium');
 
 const ActionSchema = z.enum(['看', '观察', '回避']).default('观察');
@@ -29,6 +31,15 @@ const PreferencesSchema = z
     wallet: true,
     preview: true
   });
+
+const TokenQuerySchema = z
+  .object({
+    symbol: z.string().optional(),
+    token: z.string().optional(),
+    contractAddress: z.string().optional(),
+    chain: z.string().optional()
+  })
+  .default({});
 
 const UpstreamCallSchema = z.object({
   skill: z.string(),
@@ -55,6 +66,7 @@ const WatchlistItemSchema = z.object({
   symbol: z.string().optional(),
   name: z.string().optional(),
   chain: z.string().optional(),
+  contractAddress: z.string().optional(),
   verdict: z.string().optional(),
   action: ActionSchema.optional(),
   score: z.number().min(0).max(100).optional(),
@@ -80,6 +92,8 @@ const RiskAlertSchema = z.object({
 
 const ReportDataSchema = z.object({
   title: z.string().optional(),
+  queryType: QueryTypeSchema.default('market'),
+  tokenQuery: TokenQuerySchema,
   mode: ModeSchema.default('tg'),
   chainScope: ScopeSchema.default('auto'),
   selectedChains: z.array(z.string()).default([]),
@@ -123,9 +137,11 @@ function validateReportData(input) {
 module.exports = {
   ScopeSchema,
   ModeSchema,
+  QueryTypeSchema,
   ConfidenceSchema,
   ActionSchema,
   PreferencesSchema,
+  TokenQuerySchema,
   ReportDataSchema,
   validateReportData
 };
