@@ -1,12 +1,13 @@
 ---
 name: alpha-radar-report
-description: Use this skill when the user asks to generate a Binance daily market report, Solana/BSC report, global report, Watchlist Delta Report, Alpha Radar report, risk alert report, smart money appendix, or Binance Square preview. Trigger strongly on requests like “生成今日日报”, “按 Alpha Radar 模板生成日报”, “生成全网 watchlist”, “生成风险警报”, “生成 Binance Square 预览”, “只预览不发广场”, “给我一个短版”, “给我一个 TG 版”.
-metadata: {"version":"0.7.0","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
+description: Use this skill when the user asks to generate a Binance daily market report, Solana/BSC report, global report, Watchlist Delta Report, Alpha Radar report, token report, risk alert report, smart money appendix, or Binance Square preview. Trigger strongly on requests like “生成今日日报”, “按 Alpha Radar 模板生成日报”, “生成全网 watchlist”, “生成风险警报”, “生成 Binance Square 预览”, “只预览不发广场”, “给我一个短版”, “给我一个 TG 版”, “查某个代币”.
+metadata: {"version":"0.8.0","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
 homepage: https://github.com/0xXIAOc/alpha-radar-openclaw-skill
 user-invocable: true
+disable-model-invocation: true
 ---
 
-# Alpha Radar Report v3
+# Alpha Radar Report v4
 
 ## Default behavior
 
@@ -14,6 +15,7 @@ When invoked without detailed arguments, default to:
 
 - mode: `tg`
 - scope: `auto`
+- queryType: `market`
 - window: `24h`
 - previewOnly: `true`
 - profile: `balanced`
@@ -25,6 +27,7 @@ Meaning:
 - 默认多链
 - 默认预览
 - 默认评分化
+- 默认不追问
 
 ## Scope definitions
 
@@ -35,6 +38,19 @@ Meaning:
 
 If the user does not specify a chain, prefer `auto`.
 
+## Query types
+
+- `market`: 全网 / 分链市场报告
+- `token`: 指定代币 / 指定合约报告
+
+If the user provides any of the following, switch to `token` mode:
+- `代币=...`
+- `币种=...`
+- `token=...`
+- `symbol=...`
+- `合约=...`
+- `contract=...`
+
 ## Mode definitions
 
 - `tg`: short Telegram-friendly preview
@@ -43,36 +59,60 @@ If the user does not specify a chain, prefer `auto`.
 
 If the user does not specify a mode, prefer `tg`.
 
-## Preference parsing
+## Chinese aliases
 
-Interpret these naturally when the user includes them:
+Interpret these naturally:
 
-- `scope=auto|global|solana|bsc`
-- `mode=tg|report|square`
-- `profile=cautious|balanced|aggressive`
-- `risk=low|balanced|high`
-- `top=3|5`
-- `lang=zh|en`
-- `wallet=on|off`
-- `preview=on|off`
+### 范围
+- `全网` = `scope=global`
+- `自动` = `scope=auto`
+- `solana` / `索拉纳` = `scope=solana`
+- `bsc` = `scope=bsc`
 
-Examples:
-- `/alpha_radar_report`
-- `/alpha_radar_report global`
-- `/alpha_radar_report report`
-- `/alpha_radar_report mode=square scope=global top=3`
-- `/alpha_radar_report scope=bsc profile=cautious wallet=off`
-- `/alpha_radar_report mode=tg scope=auto risk=balanced`
+### 模式
+- `预览` / `短版` / `TG版` = `mode=tg`
+- `完整版` / `长版` = `mode=report`
+- `广场版` / `Square版` = `mode=square`
+
+### 风格
+- `谨慎` = `profile=cautious`
+- `均衡` = `profile=balanced`
+- `激进` = `profile=aggressive`
+
+### 钱包
+- `钱包开` / `看钱包` = `wallet=on`
+- `钱包关` / `不看钱包` = `wallet=off`
+
+### 数量
+- `前3` = `top=3`
+- `前5` = `top=5`
+
+### 指定代币
+- `代币=CAKE`
+- `币种=PEPE`
+- `合约=0x123...`
+- `链=bsc`
 
 ## Purpose
 
-Alpha Radar turns upstream Binance skill outputs into a stable research workflow with five sections:
+Alpha Radar turns upstream Binance skill outputs into a stable research workflow.
 
+It has two major modes:
+
+### 1. Market mode
+Outputs:
 1. 今日市场主线
 2. 今日值得看名单
 3. 今日风险警报
 4. 今日观察钱包 / 聪明钱附录
 5. 今日结论
+
+### 2. Token mode
+Outputs:
+1. 代币概览
+2. 关键信号
+3. 风险提示
+4. 结论
 
 This skill should prioritize real upstream Binance skill calls in the current turn before writing any report.
 
@@ -81,7 +121,8 @@ This skill should prioritize real upstream Binance skill calls in the current tu
 When the user invokes this skill directly via slash command or `/skill alpha_radar_report`, treat it as a hard request to run the Alpha Radar workflow now.
 
 Do not respond as generic chat first.
-Do not start with a template-only placeholder report unless upstream Binance skill calls have actually been attempted in this turn.
+Do not ask a follow-up if the command already contains enough information.
+If the command is bare `/alpha_radar_report`, run the default workflow immediately.
 
 ## Required upstream skills
 
@@ -105,7 +146,8 @@ Optional enrichment:
 - Do not output a fake or generic market report when upstream skills are available.
 - If upstream skills are available, attempt them first.
 - If one upstream skill fails, continue with the remaining available skills instead of aborting the whole report.
-- If a fallback preview is required, explicitly name which upstream skill failed.
+- In `tg` and `square` mode, avoid verbose engineering wording.
+- Only show failed upstream call details when they materially affect the result.
 
 ## Required fallback wording
 
@@ -122,47 +164,37 @@ Never use vague wording like “数据未接入” if the real issue is “this 
 
 ### Step 1: Read request scope
 Infer or read:
-- target scope:
-  - `solana`
-  - `bsc`
-  - `auto`
-  - `global`
-- time window (default: `24h`)
-- mode:
-  - `tg`
-  - `report`
-  - `square`
-- preferences:
+- `queryType`: `market` or `token`
+- `scope`: `solana | bsc | auto | global`
+- `window`: default `24h`
+- `mode`: `tg | report | square`
+- `preferences`:
   - `profile`
   - `risk`
   - `top`
   - `lang`
   - `wallet`
   - `preview`
+- token fields if present:
+  - `token`
+  - `contract`
+  - `chain`
 
 ### Step 2: Run upstream Binance skill calls
 Use the required upstream skills in this order:
 
 1. `crypto-market-rank`
-   - find trending / top search / attention candidates
 2. `query-token-info`
-   - enrich candidates with market structure
 3. `trading-signal`
-   - check smart money activity
 4. `query-token-audit`
-   - check risk and contract safety
 5. `query-address-info`
-   - only for appendix evidence
 6. `spot`
-   - optional exchange-side confirmation
 7. `square-post`
-   - only after explicit confirmation
 
 ### Step 3: Build normalized report data
-Construct a normalized JSON object matching the repository schema.
 
-It should contain:
-
+For market mode include:
+- `queryType`
 - `mode`
 - `chainScope`
 - `selectedChains`
@@ -176,6 +208,20 @@ It should contain:
 - `watchlist`
 - `riskAlerts`
 - `walletAppendix`
+- `conclusion`
+
+For token mode include:
+- `queryType`
+- `tokenQuery`
+- `mode`
+- `previewOnly`
+- `preferences`
+- `chain`
+- `window`
+- `generatedAt`
+- `upstreamCalls`
+- `watchlist`
+- `riskAlerts`
 - `conclusion`
 
 ### Step 4: Render report
@@ -215,8 +261,8 @@ In `square` mode:
 - Do not output verbose engineering wording
 - Prefer a directly postable format:
   - 标题
-  - 主线
-  - Top 3
+  - 主线 / 代币结论
+  - Top 3 或代币看点
   - 风险
   - 结论
   - DYOR
