@@ -1,71 +1,155 @@
 {
-  "chain": "Solana",
+  "mode": "tg",
+  "chainScope": "auto",
+  "selectedChains": ["Solana", "BSC"],
+  "previewOnly": true,
+  "preferences": {
+    "profile": "balanced",
+    "risk": "balanced",
+    "topN": 3,
+    "lang": "zh",
+    "wallet": true,
+    "preview": true
+  },
+  "chain": "Auto",
   "window": "24h",
-  "generatedAt": "2026-03-10T12:00:00Z",
+  "generatedAt": "2026-03-11T07:00:00Z",
+  "upstreamCalls": [
+    {
+      "skill": "crypto-market-rank",
+      "status": "ok"
+    },
+    {
+      "skill": "query-token-info",
+      "status": "ok"
+    },
+    {
+      "skill": "trading-signal",
+      "status": "partial",
+      "message": "部分信号为 timeout"
+    },
+    {
+      "skill": "query-token-audit",
+      "status": "ok"
+    },
+    {
+      "skill": "query-address-info",
+      "status": "failed",
+      "message": "本轮未拉取钱包明细"
+    }
+  ],
   "marketTheme": {
-    "summary": "Meme 与 smart money 共振，热点开始从单点标的扩散到叙事层，但风险偏好仍有分歧。",
+    "summary": "Solana 负责制造注意力，BSC 提供更可研究的交易结构；全市场更适合分链判断，不适合用一套逻辑追全部。",
     "signals": [
-      "Trending 与 Top Search 集中在 3 个 Meme 名字",
-      "Social Hype 显示叙事扩散，而不只是单点拉升",
-      "Smart Money Inflow 偏向流动性更高的候选"
+      "Solana 热搜票弹性更强，但回撤风险更高",
+      "BSC 的 smart money 与流动性结构更适合做确认",
+      "审计低风险不代表位置安全，交易风险仍需单独判断"
     ],
     "stance": "观察确认"
   },
   "watchlist": [
     {
-      "symbol": "AAA",
-      "verdict": "值得看",
-      "reason": "active buy 信号持续，流动性与持仓分散度同时过线。",
+      "symbol": "Distorted",
+      "chain": "Solana",
+      "verdict": "观察",
+      "action": "观察",
+      "score": 82,
+      "confidence": "medium",
+      "reason": "热度、搜索与成交同时强，但波动很大，适合高强度跟踪，不适合无风控追高。",
       "metrics": {
         "price": "0.0123",
-        "volume24h": "2.1M",
-        "liquidity": "520k",
-        "holders": 1800,
-        "top10Pct": "18%",
-        "smartMoney": "active buy / 5 addresses",
-        "riskLevel": "LOW"
+        "priceChange24h": "+1238%",
+        "volume24h": "9.84M",
+        "liquidity": "0.53M",
+        "marketCap": "2.35M",
+        "holders": 6151,
+        "top10Pct": "28%",
+        "smartMoney": "弱确认 / timeout 混合",
+        "riskLevel": "LOW",
+        "searchCount24h": 402
       },
-      "risk": "短线热度偏高，若情绪回撤需观察承接。",
-      "next": "继续追踪 smart money 是否延续流入。"
+      "risk": "短时涨幅过大，1h/4h 回撤显著，情绪退潮时风险最高。",
+      "next": "观察热度能否继续转化为成交承接，而不是只剩搜索噪音。",
+      "sourceFlags": ["热榜", "热搜", "审计"],
+      "delta": "new"
     },
     {
-      "symbol": "BBB",
-      "verdict": "继续观察",
-      "reason": "热度有提升，但持有人扩散仍未完全跟上。",
+      "symbol": "PUMP",
+      "chain": "Solana",
+      "verdict": "看",
+      "action": "看",
+      "score": 76,
+      "confidence": "medium",
+      "reason": "更像主流流动性锚，适合作为 Solana 风险偏好的温度计，而不是弹性最大的爆发票。",
       "metrics": {
-        "price": "0.0045",
-        "volume24h": "640k",
-        "liquidity": "310k",
-        "holders": 620,
-        "top10Pct": "24%",
-        "smartMoney": "active buy / 2 addresses",
-        "riskLevel": "MEDIUM"
+        "price": "0.0051",
+        "priceChange24h": "-0.84%",
+        "volume24h": "21.01M",
+        "liquidity": "21.08M",
+        "marketCap": "2.00B",
+        "holders": 117473,
+        "top10Pct": "73.92%",
+        "smartMoney": "一般",
+        "riskLevel": "LOW"
       },
-      "risk": "holders 略低于理想安全区间。",
-      "next": "观察 holders 是否突破 800。"
+      "risk": "集中度高，更适合观察主流承接，不适合把它当低风险品种。",
+      "next": "观察资金是否从高波动小票回流主流流动性资产。",
+      "sourceFlags": ["热榜", "审计"],
+      "delta": "steady"
+    },
+    {
+      "symbol": "CAKE",
+      "chain": "BSC",
+      "verdict": "看",
+      "action": "看",
+      "score": 79,
+      "confidence": "high",
+      "reason": "BSC 里更符合“流动性 + 成交 + 结构”三项共振，适合做研究型交易筛选。",
+      "metrics": {
+        "price": "3.11",
+        "priceChange24h": "+4.6%",
+        "volume24h": "18.4M",
+        "liquidity": "12.7M",
+        "marketCap": "930M",
+        "holders": 365000,
+        "top10Pct": "41.2%",
+        "smartMoney": "buy / active",
+        "riskLevel": "LOW"
+      },
+      "risk": "不是情绪最强票，短线弹性可能弱于 Solana 热搜票。",
+      "next": "观察 smart money 是否继续维持 active buy，以及成交能否持续扩张。",
+      "sourceFlags": ["热榜", "信号", "审计"],
+      "delta": "new"
     }
   ],
   "riskAlerts": [
     {
-      "symbol": "CCC",
-      "reason": "Top10 持仓过高，同时存在较高合约风险。",
-      "flags": [
-        "Top10=41%",
-        "riskLevel=HIGH",
-        "sellTax=15%"
-      ]
+      "symbol": "TRUMP",
+      "chain": "Solana",
+      "severity": "high",
+      "category": "trading",
+      "reason": "Top10 持仓占比过高，情绪与流动性虽强，但集中度风险明显。",
+      "flags": ["Top10=89.49%", "高集中度", "情绪盘"]
+    },
+    {
+      "symbol": "Timeout Signals",
+      "chain": "BSC",
+      "severity": "medium",
+      "category": "signal",
+      "reason": "部分 smart money 信号已进入 timeout 或高 exitRate 后段，不能把旧信号当成新机会。",
+      "flags": ["timeout", "exitRate 偏高", "旧信号"]
     }
   ],
   "walletAppendix": {
-    "summary": "2 个高表现地址同时关注 AAA，而 BBB 仍主要由单地址试探性参与。",
+    "summary": "本轮未完整拉取 query-address-info，因此钱包附录仅保留简化说明。",
     "notes": [
-      "AAA 出现多地址共识",
-      "BBB 的钱包行为与社媒热度尚未完全共振"
+      "smart money 本轮更适合做过滤条件，而不是单独做多依据",
+      "如果某币同时满足热榜、成交、active buy 与低红灯审计，优先级才应上调"
     ]
   },
   "conclusion": [
-    "今天更值得关注热度、资金与风控同时过线的标的。",
-    "高热度但高集中度的名字应优先回避。",
-    "钱包行为适合作为证据，但不应单独成为结论。"
+    "今天全市场更适合按链做判断：Solana 看热度与弹性，BSC 看结构与确认。",
+    "真正值得看的不是最热的，而是热度、成交、流动性与风控能否一起对齐。",
+    "旧信号、薄流动性和高集中度，仍是今天最该回避的三类风险。"
   ]
 }
