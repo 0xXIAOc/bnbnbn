@@ -21,7 +21,9 @@ const PreferencesSchema = z
     topN: z.number().int().min(1).max(10).default(3),
     lang: z.enum(['zh', 'en']).default('zh'),
     wallet: z.boolean().default(true),
-    preview: z.boolean().default(true)
+    preview: z.boolean().default(true),
+    squareDisclosureEnabled: z.boolean().default(false),
+    squareDisclosureAskEveryTime: z.boolean().default(true)
   })
   .default({
     profile: 'balanced',
@@ -29,7 +31,9 @@ const PreferencesSchema = z
     topN: 3,
     lang: 'zh',
     wallet: true,
-    preview: true
+    preview: true,
+    squareDisclosureEnabled: false,
+    squareDisclosureAskEveryTime: true
   });
 
 const TokenQuerySchema = z
@@ -90,6 +94,29 @@ const RiskAlertSchema = z.object({
   flags: z.array(z.string()).optional()
 });
 
+const LeaderboardItemSchema = z.object({
+  symbol: z.string().optional(),
+  name: z.string().optional(),
+  chain: z.string().optional(),
+  metricLabel: z.string().optional(),
+  metricValue: z.union([z.string(), z.number()]).optional(),
+  note: z.string().optional()
+});
+
+const LeaderboardsSchema = z
+  .object({
+    gainersTop3: z.array(LeaderboardItemSchema).default([]),
+    losersTop3: z.array(LeaderboardItemSchema).default([]),
+    exchangeHotTop3: z.array(LeaderboardItemSchema).default([]),
+    walletHotTop3: z.array(LeaderboardItemSchema).default([])
+  })
+  .default({
+    gainersTop3: [],
+    losersTop3: [],
+    exchangeHotTop3: [],
+    walletHotTop3: []
+  });
+
 const ReportDataSchema = z.object({
   title: z.string().optional(),
   queryType: QueryTypeSchema.default('market'),
@@ -110,6 +137,7 @@ const ReportDataSchema = z.object({
       stance: z.string().optional()
     })
     .default({}),
+  leaderboards: LeaderboardsSchema,
   watchlist: z.array(WatchlistItemSchema).default([]),
   riskAlerts: z.array(RiskAlertSchema).default([]),
   walletAppendix: z
@@ -142,6 +170,7 @@ module.exports = {
   ActionSchema,
   PreferencesSchema,
   TokenQuerySchema,
+  LeaderboardsSchema,
   ReportDataSchema,
   validateReportData
 };
