@@ -117,6 +117,36 @@ const LeaderboardsSchema = z
     walletHotTop3: []
   });
 
+const FocusItemSchema = z.object({
+  symbol: z.string().optional(),
+  name: z.string().optional(),
+  chain: z.string().optional(),
+  reason: z.string().optional(),
+  note: z.string().optional()
+});
+
+const FuturesTemperatureSchema = z
+  .object({
+    summary: z.string().optional(),
+    preferredChain: z.string().optional(),
+    notes: z.array(z.string()).optional()
+  })
+  .default({});
+
+const MemeRadarSchema = z
+  .object({
+    summary: z.string().optional(),
+    top3: z.array(FocusItemSchema).default([])
+  })
+  .default({});
+
+const SpotFocusSchema = z
+  .object({
+    summary: z.string().optional(),
+    top3: z.array(FocusItemSchema).default([])
+  })
+  .default({});
+
 const ReportDataSchema = z.object({
   title: z.string().optional(),
   queryType: QueryTypeSchema.default('market'),
@@ -138,6 +168,9 @@ const ReportDataSchema = z.object({
     })
     .default({}),
   leaderboards: LeaderboardsSchema,
+  spotFocus: SpotFocusSchema,
+  futuresTemperature: FuturesTemperatureSchema,
+  memeRadar: MemeRadarSchema,
   watchlist: z.array(WatchlistItemSchema).default([]),
   riskAlerts: z.array(RiskAlertSchema).default([]),
   walletAppendix: z
@@ -171,6 +204,9 @@ module.exports = {
   PreferencesSchema,
   TokenQuerySchema,
   LeaderboardsSchema,
+  SpotFocusSchema,
+  FuturesTemperatureSchema,
+  MemeRadarSchema,
   ReportDataSchema,
   validateReportData
 };
