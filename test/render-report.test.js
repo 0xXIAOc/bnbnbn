@@ -7,51 +7,84 @@ const { validateReportData } = require('../src/schema');
 const { renderTg, renderReport, renderSquare } = require('../src/render');
 const { parseNaturalCommand, normalizeData } = require('../scripts/render-report');
 
-test('validateReportData accepts the v4 market payload shape', () => {
+test('validateReportData accepts the v5 market payload shape', () => {
   const result = validateReportData(sample);
-  assert.ok(result.queryType === 'market' || result.queryType === undefined);
+  assert.equal(result.queryType, 'market');
+  assert.equal(result.preferences.squareDisclosureEnabled, false);
 });
 
-test('parseNaturalCommand understands Chinese aliases', () => {
-  const result = parseNaturalCommand('全网 广场版 前3 谨慎 钱包关');
+test('parseNaturalCommand understands Chinese aliases and disclosure flags', () => {
+  const result = parseNaturalCommand('全网 广场版 前3 谨慎 钱包关 署名开 不再询问');
   assert.equal(result.scope, 'global');
   assert.equal(result.style, 'square');
   assert.equal(result.top, '3');
   assert.equal(result.profile, 'cautious');
   assert.equal(result.wallet, 'false');
+  assert.equal(result.disclosure, 'true');
+  assert.equal(result.askDisclosure, 'false');
 });
 
 test('normalizeData can switch to token mode from natural command', () => {
   const result = normalizeData(sample, {
-    command: '代币=CAKE 链=bsc 广场版'
+    command: '查询ROBO的信息 链=bsc 广场版'
   });
 
   assert.equal(result.queryType, 'token');
   assert.equal(result.mode, 'square');
   assert.equal(result.chainScope, 'bsc');
-  assert.equal(result.tokenQuery.symbol, 'CAKE');
+  assert.equal(result.tokenQuery.symbol, 'ROBO');
 });
 
-test('renderTg still works for market mode', () => {
-  const output = renderTg(
+test('renderTg includes leaderboard snapshots in market mode', () => {
+  const output = renderTg(validateReportData(sample));
+  assert.match(output, /涨幅前三/);
+  assert.match(output, /跌幅前三/);
+  assert.match(output, /交易所热度前三/);
+  assert.match(output, /钱包热度前三/);
+});
+
+test('renderReport includes 市场榜单快照 section', () => {
+  const output = renderReport(validateReportData(sample));
+  assert.match(output, /## 二、市场榜单快照/);
+});
+
+test('renderSquare supports disclosure line', () => {
+  const output = renderSquare(
     validateReportData({
       ...sample,
-      queryType: 'market'
+      preferences: {
+        ...sample.preferences,
+        squareDisclosureEnabled: true
+      }
     })
   );
 
-  assert.match(output, /Alpha Radar \|/);
-  assert.match(output, /Top：/);
+  assert.match(output, /本文由OpenClaw发出/);
+  assert.match(output, /涨幅前三/);
 });
 
 test('render token square works', () => {
   const tokenData = validateReportData({
+    title: '',
     queryType: 'token',
     tokenQuery: {
       symbol: 'CAKE',
       chain: 'BSC'
     },
     mode: 'square',
+    chainScope: 'bsc',
+    selectedChains: ['BSC'],
+    previewOnly: true,
+    preferences: {
+      profile: 'balanced',
+      risk: 'balanced',
+      topN: 3,
+      lang: 'zh',
+      wallet: true,
+      preview: true,
+      squareDisclosureEnabled: false,
+      squareDisclosureAskEveryTime: true
+    },
     chain: 'BSC',
     window: '24h',
     generatedAt: '2026-03-11T07:00:00Z',
@@ -60,6 +93,13 @@ test('render token square works', () => {
       { skill: 'trading-signal', status: 'ok' },
       { skill: 'query-token-audit', status: 'ok' }
     ],
+    marketTheme: {},
+    leaderboards: {
+      gainersTop3: [],
+      losersTop3: [],
+      exchangeHotTop3: [],
+      walletHotTop3: []
+    },
     watchlist: [
       {
         symbol: 'CAKE',
@@ -80,6 +120,7 @@ test('render token square works', () => {
       }
     ],
     riskAlerts: [],
+    walletAppendix: {},
     conclusion: ['代币当前更适合研究型跟踪，而不是情绪化追高。']
   });
 
