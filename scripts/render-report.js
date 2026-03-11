@@ -4,10 +4,12 @@
 const fs = require('fs');
 const path = require('path');
 const { validateReportData } = require('../src/schema');
-const { renderReport, renderSquare } = require('../src/render');
+const { renderTg, renderReport, renderSquare } = require('../src/render');
 
 function parseArgs(argv) {
-  const args = { style: 'report' };
+  const args = {
+    style: 'tg'
+  };
 
   for (let i = 2; i < argv.length; i += 1) {
     const token = argv[i];
@@ -20,10 +22,14 @@ function parseArgs(argv) {
       args.output = argv[++i];
     } else if (token === '--title') {
       args.title = argv[++i];
+    } else if (token === '--scope' || token === '--chain-scope') {
+      args.scope = argv[++i];
     } else if (token === '--chain') {
       args.chain = argv[++i];
     } else if (token === '--window') {
       args.window = argv[++i];
+    } else if (token === '--preview') {
+      args.preview = argv[++i];
     } else if (token === '--help' || token === '-h') {
       args.help = true;
     } else {
@@ -37,18 +43,20 @@ function parseArgs(argv) {
 function usage() {
   return [
     'Usage:',
+    '  node scripts/render-report.js --input <json-file> --style tg',
     '  node scripts/render-report.js --input <json-file> --style report',
     '  node scripts/render-report.js --input <json-file> --style square',
-    '  cat data.json | node scripts/render-report.js --style report',
-    '  node scripts/render-report.js --input <json-file> --style report --output out.md',
+    '  cat data.json | node scripts/render-report.js --style tg',
     '',
     'Options:',
-    '  --input <path>     JSON input file. Omit to read from stdin.',
-    '  --style <style>    report | square',
-    '  --output <path>    Write output to file.',
-    '  --title <title>    Override report title.',
-    '  --chain <chain>    Override chain value.',
-    '  --window <window>  Override window value.'
+    '  --input <path>          JSON input file. Omit to read from stdin.',
+    '  --style <style>         tg | report | square',
+    '  --output <path>         Write output to file.',
+    '  --title <title>         Override report title.',
+    '  --scope <scope>         auto | global | solana | bsc | base | eth',
+    '  --chain <chain>         Override human-readable chain label.',
+    '  --window <window>       Override time window, e.g. 24h.',
+    '  --preview <bool>        true | false'
   ].join('\n');
 }
 
@@ -83,20 +91,62 @@ async function readRawInput(inputPath) {
   return raw;
 }
 
+function normalizeScope(value) {
+  if (!value) return undefined;
+  const normalized = String(value).trim().toLowerCase();
+
+  if (normalized === 'sol') return 'solana';
+  if (normalized === 'ethereum') return 'ethereum';
+  if (normalized === 'eth') return 'eth';
+  if (['auto', 'global', 'solana', 'bsc', 'base', 'eth', 'ethereum', 'custom'].includes(normalized)) {
+    return normalized;
+  }
+
+  return 'custom';
+}
+
+function normalizeStyle(value) {
+  if (!value) return 'tg';
+  const normalized = String(value).trim().toLowerCase();
+
+  if (normalized === 'telegram') return 'tg';
+  if (normalized === 'full') return 'report';
+  if (['tg', 'report', 'square'].includes(normalized)) return normalized;
+
+  throw new Error(`Invalid style: ${value}. Expected "tg", "report", or "square".`);
+}
+
+function normalizePreview(value, fallback = true) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const normalized = String(value).trim().toLowerCase();
+  if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+  return fallback;
+}
+
 function normalizeData(raw, args = {}) {
   const validated = validateReportData(raw);
+
+  const inferredScope =
+    normalizeScope(args.scope) ||
+    validated.chainScope ||
+    (validated.chain && validated.chain !== 'Auto' ? normalizeScope(validated.chain) : 'auto');
+
+  const mode = normalizeStyle(args.style || validated.mode || 'tg');
+
   return {
     ...validated,
+    mode,
+    chainScope: inferredScope || 'auto',
     title: args.title || validated.title || '',
-    chain: args.chain || validated.chain,
-    window: args.window || validated.window
+    chain: args.chain || validated.chain || 'Auto',
+    window: args.window || validated.window || '24h',
+    previewOnly: normalizePreview(args.preview, validated.previewOnly !== false)
   };
 }
 
 function writeOutputIfNeeded(outputPath, content) {
-  if (!outputPath) {
-    return;
-  }
+  if (!outputPath) return;
 
   const resolved = path.resolve(process.cwd(), outputPath);
   fs.mkdirSync(path.dirname(resolved), { recursive: true });
@@ -112,14 +162,18 @@ async function main() {
       return;
     }
 
-    if (!['report', 'square'].includes(args.style)) {
-      throw new Error(`Invalid style: ${args.style}. Expected "report" or "square".`);
-    }
-
     const rawText = await readRawInput(args.input);
     const rawJson = JSON.parse(rawText);
     const data = normalizeData(rawJson, args);
-    const output = args.style === 'square' ? renderSquare(data) : renderReport(data);
+
+    let output;
+    if (data.mode === 'report') {
+      output = renderReport(data);
+    } else if (data.mode === 'square') {
+      output = renderSquare(data);
+    } else {
+      output = renderTg(data);
+    }
 
     writeOutputIfNeeded(args.output, output);
     process.stdout.write(output);
@@ -136,5 +190,7 @@ if (require.main === module) {
 module.exports = {
   parseArgs,
   normalizeData,
+  normalizeScope,
+  normalizeStyle,
   usage
 };
