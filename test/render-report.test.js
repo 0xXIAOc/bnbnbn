@@ -10,8 +10,9 @@ const { parseNaturalCommand, normalizeData } = require('../scripts/render-report
 test('validateReportData accepts final payload shape with base support', () => {
   const result = validateReportData(sample);
   assert.equal(result.queryType, 'market');
-  assert.equal(result.preferences.squareDisclosureEnabled, false);
+  assert.equal(result.preferences.squareDisclosureEnabled, true);
   assert.equal(result.preferences.showSpotLeaderboards, true);
+  assert.equal(result.preferences.showFuturesSentiment, true);
   assert.ok(result.selectedChains.includes('Base'));
 });
 
@@ -21,7 +22,7 @@ test('parseNaturalCommand understands help mode', () => {
 });
 
 test('parseNaturalCommand understands base alias and module toggles', () => {
-  const result = parseNaturalCommand('Base 广场版 前3 署名开 不再询问 现货关 热度开 钱包热度关 meme开');
+  const result = parseNaturalCommand('Base 广场版 前3 署名开 不再询问 现货关 热度开 钱包热度关 meme开 衍生品关');
   assert.equal(result.scope, 'base');
   assert.equal(result.style, 'square');
   assert.equal(result.top, '3');
@@ -31,17 +32,21 @@ test('parseNaturalCommand understands base alias and module toggles', () => {
   assert.equal(result.showExchangeHot, 'true');
   assert.equal(result.showWalletHot, 'false');
   assert.equal(result.showMeme, 'true');
+  assert.equal(result.showFutures, 'false');
 });
 
 test('normalizeData can switch to token mode from natural command', () => {
-  const result = normalizeData(sample, {
-    command: '查询ROBO的信息 链=bsc 广场版'
-  });
-
+  const result = normalizeData(sample, { command: '查询ROBO的信息 链=bsc 广场版' });
   assert.equal(result.queryType, 'token');
   assert.equal(result.mode, 'square');
   assert.equal(result.chainScope, 'bsc');
   assert.equal(result.tokenQuery.symbol, 'ROBO');
+});
+
+test('normalizeData maps futures toggle from natural command', () => {
+  const result = normalizeData(sample, { command: '全网 衍生品关 长版' });
+  assert.equal(result.mode, 'report');
+  assert.equal(result.preferences.showFuturesSentiment, false);
 });
 
 test('renderTg includes spot and hot leaderboards and meme radar', () => {
@@ -51,52 +56,74 @@ test('renderTg includes spot and hot leaderboards and meme radar', () => {
   assert.match(output, /交易所热度前三/);
   assert.match(output, /钱包热度前三/);
   assert.match(output, /Meme 雷达/);
+  assert.match(output, /衍生品情绪：/);
 });
 
-test('renderReport includes simplified trader sections', () => {
+test('renderTg watchlist line includes source flags and risk tags', () => {
+  const output = renderTg(validateReportData(sample));
+  assert.match(output, /来源：spot/);
+  assert.match(output, /标签：高波动；集中度偏高；回撤风险/);
+});
+
+test('renderReport includes trader sections and metrics table', () => {
   const output = renderReport(validateReportData(sample));
   assert.match(output, /## 现货涨幅前三/);
   assert.match(output, /## 现货跌幅前三/);
   assert.match(output, /## 交易所热度前三/);
   assert.match(output, /## 钱包热度前三/);
   assert.match(output, /## Meme 雷达/);
+  assert.match(output, /## 衍生品情绪/);
+  assert.match(output, /\| 指标 \| 数值 \|/);
+});
+
+test('renderReport hides futures block when toggle is off', () => {
+  const output = renderReport(
+    validateReportData({
+      ...sample,
+      preferences: { ...sample.preferences, showFuturesSentiment: false }
+    })
+  );
+  assert.doesNotMatch(output, /## 衍生品情绪/);
 });
 
 test('renderSquare supports disclosure line', () => {
   const output = renderSquare(
-    validateReportData({
-      ...sample,
-      preferences: {
-        ...sample.preferences,
-        squareDisclosureEnabled: true
-      }
-    })
+    validateReportData({ ...sample, preferences: { ...sample.preferences, squareDisclosureEnabled: true } })
   );
-
   assert.match(output, /本文由OpenClaw发出/);
   assert.match(output, /现货涨幅前三/);
   assert.match(output, /交易所热度前三/);
 });
 
-test('render help mode works', () => {
+test('render help mode works with explicit helpCards', () => {
   const output = renderTg(
     validateReportData({
       ...sample,
-      queryType: 'help'
+      queryType: 'help',
+      helpCards: [
+        {
+          title: '全网速览',
+          description: '看全网主线与榜单。',
+          examples: ['/alpha 全网']
+        }
+      ]
     })
   );
   assert.match(output, /Alpha 可用功能/);
   assert.match(output, /全网速览/);
 });
 
-test('render token card works for Base token', () => {
+test('render help mode falls back when helpCards is empty', () => {
+  const output = renderTg(validateReportData({ ...sample, queryType: 'help', helpCards: [] }));
+  assert.match(output, /Alpha 可用功能/);
+  assert.match(output, /全网速览/);
+});
+
+test('render token card works for Base token with compact metrics in square', () => {
   const tokenData = validateReportData({
     title: '',
     queryType: 'token',
-    tokenQuery: {
-      symbol: 'AERO',
-      chain: 'Base'
-    },
+    tokenQuery: { symbol: 'AERO', chain: 'Base' },
     mode: 'square',
     chainScope: 'base',
     selectedChains: ['Base'],
@@ -112,6 +139,7 @@ test('render token card works for Base token', () => {
       showExchangeHot: true,
       showWalletHot: true,
       showMemeRadar: true,
+      showFuturesSentiment: true,
       squareDisclosureEnabled: false,
       squareDisclosureAskEveryTime: true
     },
@@ -127,6 +155,7 @@ test('render token card works for Base token', () => {
     spotLeaderboards: { gainersTop3: [], losersTop3: [] },
     leaderboards: { exchangeHotTop3: [], walletHotTop3: [] },
     memeRadar: { summary: '', top3: [] },
+    futuresSentiment: { summary: '', panels: [] },
     watchlist: [
       {
         symbol: 'AERO',
@@ -137,6 +166,7 @@ test('render token card works for Base token', () => {
         reason: 'Base 侧更适合作为叙事跟踪票，热度与资金关注度都有延续空间。',
         metrics: {
           price: '1.82',
+          priceChange24h: '+6.2%',
           volume24h: '12.2M',
           liquidity: '9.4M',
           top10Pct: '36.1%',
@@ -151,11 +181,43 @@ test('render token card works for Base token', () => {
     conclusion: ['代币当前更适合作为 Base 侧结构观察，而不是情绪化追高。'],
     helpCards: []
   });
-
   const output = renderSquare(tokenData);
   assert.match(output, /Alpha Radar｜AERO/);
-  assert.match(output, /看点：/);
-  assert.match(output, /风险：/);
+  assert.match(output, /关键数据：价格：1\.82；24h涨跌：\+6\.2%；24h成交量：12\.2M；风险等级：LOW/);
+  assert.doesNotMatch(output, /流动性：9\.4M/);
+});
+
+test('render token report supports multiple tokens', () => {
+  const tokenData = validateReportData({
+    ...sample,
+    queryType: 'token',
+    watchlist: [
+      {
+        symbol: 'ROBO',
+        chain: 'Base',
+        action: '看',
+        score: 88,
+        reason: 'first',
+        metrics: { price: '$1' },
+        risk: 'r1',
+        next: 'n1'
+      },
+      {
+        symbol: 'AURA',
+        chain: 'Solana',
+        action: '继续观察',
+        score: 81,
+        reason: 'second',
+        metrics: { price: '$2' },
+        risk: 'r2',
+        next: 'n2'
+      }
+    ]
+  });
+  const output = renderReport(tokenData);
+  assert.match(output, /## 1\. ROBO \[Base\]/);
+  assert.match(output, /## 2\. AURA \[Solana\]/);
+  assert.match(output, /### 关键指标/);
 });
 
 test('renderTg still shows spot sections when spot call fails', () => {
@@ -169,13 +231,9 @@ test('renderTg still shows spot sections when spot call fails', () => {
         { skill: 'trading-signal', status: 'ok' },
         { skill: 'query-token-audit', status: 'ok' }
       ],
-      spotLeaderboards: {
-        gainersTop3: [],
-        losersTop3: []
-      }
+      spotLeaderboards: { gainersTop3: [], losersTop3: [] }
     })
   );
-
   assert.match(output, /现货涨幅前三/);
   assert.match(output, /本轮未成功调用 `spot`/);
   assert.match(output, /现货跌幅前三/);
@@ -192,13 +250,14 @@ test('renderSquare still shows spot sections when spot call fails', () => {
         { skill: 'trading-signal', status: 'ok' },
         { skill: 'query-token-audit', status: 'ok' }
       ],
-      spotLeaderboards: {
-        gainersTop3: [],
-        losersTop3: []
-      }
+      spotLeaderboards: { gainersTop3: [], losersTop3: [] }
     })
   );
-
   assert.match(output, /现货涨幅前三/);
   assert.match(output, /本轮未成功调用 `spot`/);
+});
+
+test('renderFuturesPanel shows open interest value in outputs', () => {
+  const output = renderTg(validateReportData(sample));
+  assert.match(output, /持仓 \$386,545,621/);
 });
