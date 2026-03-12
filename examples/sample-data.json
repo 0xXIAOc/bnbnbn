@@ -177,5 +177,32 @@
     "今天全网更适合按链做判断：Solana 看弹性，BSC 看结构，Base 看叙事延续。",
     "优先关注现货涨跌榜、交易所热度、钱包热度和 Meme 雷达同时共振的币。",
     "旧信号、薄流动性和高集中度，仍是今天最该回避的三类风险。"
+  ],
+  "helpCards": [
+    {
+      "title": "全网速览",
+      "description": "看全网 24h 主线、现货涨跌榜、热度榜、钱包热度和 Meme 雷达。",
+      "examples": ["/alpha 全网", "/alpha global"]
+    },
+    {
+      "title": "分链速览",
+      "description": "看 Solana / BSC / Base 单链视角。",
+      "examples": ["/alpha base", "/alpha bsc", "/alpha solana"]
+    },
+    {
+      "title": "指定代币体检",
+      "description": "查某个币的价格、流动性、风险、信号与结论。",
+      "examples": ["/alpha 代币=ROBO", "查询ROBO的信息"]
+    },
+    {
+      "title": "广场文案",
+      "description": "生成可直接发 Binance Square 的文案草稿。",
+      "examples": ["/alpha 全网 广场版 前3", "/alpha 全网 广场版 署名开 不再询问"]
+    },
+    {
+      "title": "偏好设置",
+      "description": "控制显示模块和风格偏好。",
+      "examples": ["谨慎", "钱包关", "现货关", "热度开", "meme开"]
+    }
   ]
 }
