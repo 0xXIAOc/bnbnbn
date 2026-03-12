@@ -99,6 +99,12 @@ function shouldShowFailureDetails(data, mode) {
   return false;
 }
 
+function hasSuccessfulUpstreamCall(data, skillName) {
+  return ensureArray(data.upstreamCalls).some(
+    (call) => call.skill === skillName && ['ok', 'partial'].includes(call.status)
+  );
+}
+
 function formatLeaderboardItem(item, defaultLabel) {
   const symbol = item.symbol || item.name || '未知代币';
   const chain = item.chain ? ` [${item.chain}]` : '';
@@ -111,15 +117,19 @@ function formatLeaderboardItem(item, defaultLabel) {
   return `${symbol}${chain}${note}`;
 }
 
-function renderSimpleList(title, items, metricLabel) {
+function renderRequiredList(title, items, metricLabel, fallbackText) {
+  const lines = [`${title}：`];
   const list = ensureArray(items);
-  const lines = [];
-  if (list.length === 0) return lines;
 
-  lines.push(`${title}：`);
+  if (list.length === 0) {
+    lines.push(`- ${fallbackText}`);
+    return lines;
+  }
+
   list.slice(0, 3).forEach((item, idx) => {
     lines.push(`- ${idx + 1}. ${formatLeaderboardItem(item, metricLabel)}`);
   });
+
   return lines;
 }
 
@@ -136,6 +146,12 @@ function renderMemeRadarBlock(memeRadar = {}) {
     lines.push(`- ${idx + 1}. ${symbol}${chain}｜${reason}`);
   });
   return lines;
+}
+
+function renderRequiredMemeRadar(memeRadar = {}, fallbackText = '暂无 Meme 雷达数据') {
+  const block = renderMemeRadarBlock(memeRadar);
+  if (block.length > 0) return block;
+  return ['Meme 雷达：', `- ${fallbackText}`];
 }
 
 function renderHelp(data) {
@@ -181,40 +197,81 @@ function renderMarketTg(data) {
   const topItems = sortWatchlist(data.watchlist).slice(0, getTopN(data, 3));
   const topRisks = ensureArray(data.riskAlerts).slice(0, 2);
 
+  const spotReady = hasSuccessfulUpstreamCall(data, 'spot');
+  const rankReady = hasSuccessfulUpstreamCall(data, 'crypto-market-rank');
+  const memeReady = hasSuccessfulUpstreamCall(data, 'meme-rush');
+
   lines.push(`📊 Alpha Radar｜${label} ${stringValue(data.window, '24h')} 预览`);
   lines.push(`主线一句话：${stringValue(data.marketTheme.summary, '数据不足，暂不下结论。')}`);
 
   const spotGainers =
-    data.preferences?.showSpotLeaderboards === false ? [] : renderSimpleList('现货涨幅前三', data.spotLeaderboards?.gainersTop3, '涨幅');
+    data.preferences?.showSpotLeaderboards === false
+      ? []
+      : renderRequiredList(
+          '现货涨幅前三',
+          data.spotLeaderboards?.gainersTop3,
+          '涨幅',
+          spotReady ? '暂无现货涨幅数据' : '本轮未成功调用 `spot`'
+        );
 
   const spotLosers =
-    data.preferences?.showSpotLeaderboards === false ? [] : renderSimpleList('现货跌幅前三', data.spotLeaderboards?.losersTop3, '跌幅');
+    data.preferences?.showSpotLeaderboards === false
+      ? []
+      : renderRequiredList(
+          '现货跌幅前三',
+          data.spotLeaderboards?.losersTop3,
+          '跌幅',
+          spotReady ? '暂无现货跌幅数据' : '本轮未成功调用 `spot`'
+        );
 
   const exchangeHot =
-    data.preferences?.showExchangeHot === false ? [] : renderSimpleList('交易所热度前三', data.leaderboards?.exchangeHotTop3, '热度');
+    data.preferences?.showExchangeHot === false
+      ? []
+      : renderRequiredList(
+          '交易所热度前三',
+          data.leaderboards?.exchangeHotTop3,
+          '热度',
+          rankReady ? '暂无交易所热度数据' : '本轮未成功调用 `crypto-market-rank`'
+        );
 
   const walletHot =
-    data.preferences?.showWalletHot === false ? [] : renderSimpleList('钱包热度前三', data.leaderboards?.walletHotTop3, '热度');
+    data.preferences?.showWalletHot === false
+      ? []
+      : renderRequiredList(
+          '钱包热度前三',
+          data.leaderboards?.walletHotTop3,
+          '热度',
+          rankReady ? '暂无钱包热度数据' : '本轮未成功调用 `crypto-market-rank`'
+        );
 
   const memeRadar =
-    data.preferences?.showMemeRadar === false ? [] : renderMemeRadarBlock(data.memeRadar || {});
+    data.preferences?.showMemeRadar === false
+      ? []
+      : renderRequiredMemeRadar(
+          data.memeRadar || {},
+          memeReady ? '暂无 Meme 雷达数据' : '本轮未成功调用 `meme-rush`'
+        );
 
   if (spotGainers.length) {
     lines.push('');
     lines.push(...spotGainers);
   }
+
   if (spotLosers.length) {
     lines.push('');
     lines.push(...spotLosers);
   }
+
   if (exchangeHot.length) {
     lines.push('');
     lines.push(...exchangeHot);
   }
+
   if (walletHot.length) {
     lines.push('');
     lines.push(...walletHot);
   }
+
   if (memeRadar.length) {
     lines.push('');
     lines.push(...memeRadar);
@@ -331,6 +388,10 @@ function renderReport(data) {
     return `${lines.join('\n').trim()}\n`;
   }
 
+  const spotReady = hasSuccessfulUpstreamCall(data, 'spot');
+  const rankReady = hasSuccessfulUpstreamCall(data, 'crypto-market-rank');
+  const memeReady = hasSuccessfulUpstreamCall(data, 'meme-rush');
+
   lines.push(`# ${data.title || `Alpha Radar | ${label} | ${stringValue(data.window, '24h')}`}`);
   if (data.generatedAt) lines.push(`生成时间：${data.generatedAt}`);
   lines.push(`范围：${label}`);
@@ -341,48 +402,54 @@ function renderReport(data) {
   lines.push('');
 
   lines.push('## 现货涨幅前三');
-  const gainers = renderSimpleList('', data.spotLeaderboards?.gainersTop3, '涨幅');
-  if (gainers.length === 0) {
-    lines.push('暂无数据');
-  } else {
-    gainers.slice(1).forEach((line) => lines.push(line));
-  }
+  renderRequiredList(
+    '现货涨幅前三',
+    data.spotLeaderboards?.gainersTop3,
+    '涨幅',
+    spotReady ? '暂无现货涨幅数据' : '本轮未成功调用 `spot`'
+  )
+    .slice(1)
+    .forEach((line) => lines.push(line));
   lines.push('');
 
   lines.push('## 现货跌幅前三');
-  const losers = renderSimpleList('', data.spotLeaderboards?.losersTop3, '跌幅');
-  if (losers.length === 0) {
-    lines.push('暂无数据');
-  } else {
-    losers.slice(1).forEach((line) => lines.push(line));
-  }
+  renderRequiredList(
+    '现货跌幅前三',
+    data.spotLeaderboards?.losersTop3,
+    '跌幅',
+    spotReady ? '暂无现货跌幅数据' : '本轮未成功调用 `spot`'
+  )
+    .slice(1)
+    .forEach((line) => lines.push(line));
   lines.push('');
 
   lines.push('## 交易所热度前三');
-  const exchangeHot = renderSimpleList('', data.leaderboards?.exchangeHotTop3, '热度');
-  if (exchangeHot.length === 0) {
-    lines.push('暂无数据');
-  } else {
-    exchangeHot.slice(1).forEach((line) => lines.push(line));
-  }
+  renderRequiredList(
+    '交易所热度前三',
+    data.leaderboards?.exchangeHotTop3,
+    '热度',
+    rankReady ? '暂无交易所热度数据' : '本轮未成功调用 `crypto-market-rank`'
+  )
+    .slice(1)
+    .forEach((line) => lines.push(line));
   lines.push('');
 
   lines.push('## 钱包热度前三');
-  const walletHot = renderSimpleList('', data.leaderboards?.walletHotTop3, '热度');
-  if (walletHot.length === 0) {
-    lines.push('暂无数据');
-  } else {
-    walletHot.slice(1).forEach((line) => lines.push(line));
-  }
+  renderRequiredList(
+    '钱包热度前三',
+    data.leaderboards?.walletHotTop3,
+    '热度',
+    rankReady ? '暂无钱包热度数据' : '本轮未成功调用 `crypto-market-rank`'
+  )
+    .slice(1)
+    .forEach((line) => lines.push(line));
   lines.push('');
 
   lines.push('## Meme 雷达');
-  const memeLines = renderMemeRadarBlock(data.memeRadar || {});
-  if (memeLines.length === 0) {
-    lines.push('暂无可用 Meme 雷达。');
-  } else {
-    memeLines.forEach((line) => lines.push(line));
-  }
+  renderRequiredMemeRadar(
+    data.memeRadar || {},
+    memeReady ? '暂无 Meme 雷达数据' : '本轮未成功调用 `meme-rush`'
+  ).forEach((line) => lines.push(line));
   lines.push('');
 
   lines.push('## 值得看 Top');
@@ -458,15 +525,61 @@ function renderSquare(data) {
   const topItems = sortWatchlist(data.watchlist).slice(0, Math.min(getTopN(data, 3), 3));
   const topRisks = ensureArray(data.riskAlerts).slice(0, 2);
 
+  const spotReady = hasSuccessfulUpstreamCall(data, 'spot');
+  const rankReady = hasSuccessfulUpstreamCall(data, 'crypto-market-rank');
+  const memeReady = hasSuccessfulUpstreamCall(data, 'meme-rush');
+
   lines.push(`Alpha Radar｜${label} ${stringValue(data.window, '24h')} 预览`);
   lines.push('');
   lines.push(`主线：${stringValue(data.marketTheme.summary, '今日主线暂不明确。')}`);
 
-  const spotGainers = data.preferences?.showSpotLeaderboards === false ? [] : renderSimpleList('现货涨幅前三', data.spotLeaderboards?.gainersTop3, '涨幅');
-  const spotLosers = data.preferences?.showSpotLeaderboards === false ? [] : renderSimpleList('现货跌幅前三', data.spotLeaderboards?.losersTop3, '跌幅');
-  const exchangeHot = data.preferences?.showExchangeHot === false ? [] : renderSimpleList('交易所热度前三', data.leaderboards?.exchangeHotTop3, '热度');
-  const walletHot = data.preferences?.showWalletHot === false ? [] : renderSimpleList('钱包热度前三', data.leaderboards?.walletHotTop3, '热度');
-  const memeRadar = data.preferences?.showMemeRadar === false ? [] : renderMemeRadarBlock(data.memeRadar || {});
+  const spotGainers =
+    data.preferences?.showSpotLeaderboards === false
+      ? []
+      : renderRequiredList(
+          '现货涨幅前三',
+          data.spotLeaderboards?.gainersTop3,
+          '涨幅',
+          spotReady ? '暂无现货涨幅数据' : '本轮未成功调用 `spot`'
+        );
+
+  const spotLosers =
+    data.preferences?.showSpotLeaderboards === false
+      ? []
+      : renderRequiredList(
+          '现货跌幅前三',
+          data.spotLeaderboards?.losersTop3,
+          '跌幅',
+          spotReady ? '暂无现货跌幅数据' : '本轮未成功调用 `spot`'
+        );
+
+  const exchangeHot =
+    data.preferences?.showExchangeHot === false
+      ? []
+      : renderRequiredList(
+          '交易所热度前三',
+          data.leaderboards?.exchangeHotTop3,
+          '热度',
+          rankReady ? '暂无交易所热度数据' : '本轮未成功调用 `crypto-market-rank`'
+        );
+
+  const walletHot =
+    data.preferences?.showWalletHot === false
+      ? []
+      : renderRequiredList(
+          '钱包热度前三',
+          data.leaderboards?.walletHotTop3,
+          '热度',
+          rankReady ? '暂无钱包热度数据' : '本轮未成功调用 `crypto-market-rank`'
+        );
+
+  const memeRadar =
+    data.preferences?.showMemeRadar === false
+      ? []
+      : renderRequiredMemeRadar(
+          data.memeRadar || {},
+          memeReady ? '暂无 Meme 雷达数据' : '本轮未成功调用 `meme-rush`'
+        );
 
   if (spotGainers.length) {
     lines.push('');
