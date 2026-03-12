@@ -8,7 +8,7 @@ const ScopeSchema = z
 
 const ModeSchema = z.enum(['tg', 'report', 'square']).default('tg');
 
-const QueryTypeSchema = z.enum(['market', 'token']).default('market');
+const QueryTypeSchema = z.enum(['market', 'token', 'help']).default('market');
 
 const ConfidenceSchema = z.enum(['high', 'medium', 'low']).default('medium');
 
@@ -151,6 +151,12 @@ const MemeRadarSchema = z
     top3: []
   });
 
+const HelpCardSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  examples: z.array(z.string()).default([])
+});
+
 const ReportDataSchema = z.object({
   title: z.string().optional(),
   queryType: QueryTypeSchema.default('market'),
@@ -182,7 +188,8 @@ const ReportDataSchema = z.object({
       notes: z.array(z.string()).optional()
     })
     .default({}),
-  conclusion: z.array(z.string()).default([])
+  conclusion: z.array(z.string()).default([]),
+  helpCards: z.array(HelpCardSchema).default([])
 });
 
 function validateReportData(input) {
