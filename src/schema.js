@@ -23,8 +23,8 @@ const PreferencesSchema = z
     wallet: z.boolean().default(true),
     preview: z.boolean().default(true),
     showSpotLeaderboards: z.boolean().default(true),
-    showExchangeHot: z.boolean().default(true),
-    showWalletHot: z.boolean().default(true),
+    showExchangeHot: z.boolean().default(false),
+    showWalletHot: z.boolean().default(false),
     showMemeRadar: z.boolean().default(true),
     showFuturesSentiment: z.boolean().default(true),
     squareDisclosureEnabled: z.boolean().default(false),
@@ -38,8 +38,8 @@ const PreferencesSchema = z
     wallet: true,
     preview: true,
     showSpotLeaderboards: true,
-    showExchangeHot: true,
-    showWalletHot: true,
+    showExchangeHot: false,
+    showWalletHot: false,
     showMemeRadar: true,
     showFuturesSentiment: true,
     squareDisclosureEnabled: false,
@@ -123,6 +123,26 @@ const SpotLeaderboardsSchema = z
     losersTop3: []
   });
 
+const AlphaLeaderboardsSchema = z
+  .object({
+    volumeTop3: z.array(LeaderboardItemSchema).default([]),
+    volumeTop3NoUsdsFutures: z.array(LeaderboardItemSchema).default([])
+  })
+  .default({
+    volumeTop3: [],
+    volumeTop3NoUsdsFutures: []
+  });
+
+const FuturesLeaderboardsSchema = z
+  .object({
+    fundingTop3: z.array(LeaderboardItemSchema).default([]),
+    gainersTop3WithFunding: z.array(LeaderboardItemSchema).default([])
+  })
+  .default({
+    fundingTop3: [],
+    gainersTop3WithFunding: []
+  });
+
 const LeaderboardsSchema = z
   .object({
     exchangeHotTop3: z.array(LeaderboardItemSchema).default([]),
@@ -174,6 +194,15 @@ const FuturesSentimentSchema = z
     panels: []
   });
 
+const FearGreedIndexSchema = z
+  .object({
+    value: z.union([z.string(), z.number()]).optional(),
+    classification: z.string().optional(),
+    source: z.string().optional(),
+    updatedAt: z.string().optional()
+  })
+  .default({});
+
 const HelpCardSchema = z.object({
   title: z.string(),
   description: z.string(),
@@ -193,6 +222,7 @@ const ReportDataSchema = z.object({
   window: z.string().default('24h'),
   generatedAt: z.string().optional(),
   upstreamCalls: z.array(UpstreamCallSchema).default([]),
+  fearGreedIndex: FearGreedIndexSchema,
   marketTheme: z
     .object({
       summary: z.string().optional(),
@@ -201,6 +231,8 @@ const ReportDataSchema = z.object({
     })
     .default({}),
   spotLeaderboards: SpotLeaderboardsSchema,
+  alphaLeaderboards: AlphaLeaderboardsSchema,
+  futuresLeaderboards: FuturesLeaderboardsSchema,
   leaderboards: LeaderboardsSchema,
   memeRadar: MemeRadarSchema,
   futuresSentiment: FuturesSentimentSchema,
@@ -238,9 +270,12 @@ module.exports = {
   PreferencesSchema,
   TokenQuerySchema,
   SpotLeaderboardsSchema,
+  AlphaLeaderboardsSchema,
+  FuturesLeaderboardsSchema,
   LeaderboardsSchema,
   MemeRadarSchema,
   FuturesSentimentSchema,
+  FearGreedIndexSchema,
   ReportDataSchema,
   validateReportData
 };
