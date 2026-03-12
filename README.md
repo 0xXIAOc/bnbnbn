@@ -1,305 +1,73 @@
----
-name: alpha
-description: Use this skill when the user asks to generate a Binance daily market report, Solana/BSC report, global report, Watchlist Delta Report, Alpha Radar report, token report, risk alert report, smart money appendix, or Binance Square preview. Trigger strongly on Chinese requests like “生成今日日报”, “按 Alpha Radar 模板生成日报”, “生成全网 watchlist”, “生成风险警报”, “生成 Binance Square 预览”, “只预览不发广场”, “给我一个短版”, “给我一个 TG 版”, “查询ROBO的信息”, “查询代币ROBO”, “查一下ROBO”, “ROBO怎么样”, “全网广场版前3”, “BSC 谨慎 钱包关”.
-metadata: {"version":"0.8.2","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
-homepage: https://github.com/0xXIAOc/alpha-radar-openclaw-skill
-user-invocable: true
----
+# Alpha Radar OpenClaw Skill
 
-# Alpha Radar Report v4.2
+这是整理后的维护版说明。`SKILL.md` 是唯一的 SKILL 权威定义，README 不再复制整段 SKILL 元数据，避免版本和能力描述漂移。
 
-## Default behavior
+## 当前状态
 
-When invoked without detailed arguments, default to:
+- 权威 SKILL 定义：`SKILL.md`
+- 渲染入口：`scripts/render-report.js`
+- 公共 API 数据抓取：`scripts/fetch-binance-public.js`
+- 主渲染器：`src/render.js`
+- 数据校验：`src/schema.js`
 
-- mode: `tg`
-- scope: `auto`
-- queryType: `market`
-- window: `24h`
-- previewOnly: `true`
-- profile: `balanced`
-- topN: `3`
-- lang: `zh`
+## 已修复的重点问题
 
-Meaning:
-- 默认短版
-- 默认多链
-- 默认预览
-- 默认评分化
-- 默认不追问
+- 修复 `Square` 模式结论被硬编码覆盖的问题
+- 修复 `Square` + `help` 模式下署名被丢失的问题
+- 修复 `report` 模式不遵守模块开关的问题
+- 修复 `renderRequiredList` 输出 `- 1. xxx` 的双重序号问题
+- 修复 `scopeLabel()` 对 `bsc` / `solana` 单链标签显示错误的问题
+- 修复 `parseNaturalCommand()` 把链名误识别为代币名的问题
+- 增加中文数字 `前三 / 前五 / 前十` 解析
+- 增加 `--validate-only / --dry-run`
+- 增加 `--format json`
+- 将 `futuresSentiment` 正式纳入 schema 与渲染层
+- 增加 `Square` 文本字数统计
+- 更新 sample 输出与 smoke 脚本结构
 
-## Scope definitions
+## 快速开始
 
-- `solana`: only Solana
-- `bsc`: only BSC
-- `auto`: compare Solana and BSC first, then merge into one report
-- `global`: use all available chains from upstream Binance skills, then output one merged report
-
-If the user does not specify a chain, prefer `auto`.
-
-## Query types
-
-- `market`: 全网 / 分链市场报告
-- `token`: 指定代币 / 指定合约报告
-
-If the user provides any of the following, switch to `token` mode:
-- `代币=...`
-- `币种=...`
-- `token=...`
-- `symbol=...`
-- `合约=...`
-- `contract=...`
-- 自然中文句式，例如：
-  - `查询ROBO的信息`
-  - `查询代币ROBO`
-  - `查一下ROBO`
-  - `看看ROBO`
-  - `ROBO怎么样`
-
-## Mode definitions
-
-- `tg`: short Telegram-friendly preview
-- `report`: full research report
-- `square`: concise Binance Square preview, directly postable pure text
-
-If the user does not specify a mode, prefer `tg`.
-
-## Chinese aliases
-
-Interpret these naturally:
-
-### 范围
-- `全网` = `scope=global`
-- `自动` = `scope=auto`
-- `solana` / `索拉纳` = `scope=solana`
-- `bsc` = `scope=bsc`
-
-### 模式
-- `预览` / `短版` / `TG版` = `mode=tg`
-- `完整版` / `长版` = `mode=report`
-- `广场版` / `Square版` = `mode=square`
-
-### 风格
-- `谨慎` = `profile=cautious`
-- `均衡` = `profile=balanced`
-- `激进` = `profile=aggressive`
-
-### 钱包
-- `钱包开` / `看钱包` = `wallet=on`
-- `钱包关` / `不看钱包` = `wallet=off`
-
-### 数量
-- `前3` = `top=3`
-- `前5` = `top=5`
-
-### 指定代币
-- `代币=CAKE`
-- `币种=PEPE`
-- `合约=0x123...`
-- `链=bsc`
-
-## Purpose
-
-Alpha Radar turns upstream Binance skill outputs into a stable research workflow.
-
-It has two major modes:
-
-### 1. Market mode
-Outputs:
-1. 今日市场主线
-2. 今日值得看名单
-3. 今日风险警报
-4. 今日观察钱包 / 聪明钱附录
-5. 今日结论
-
-### 2. Token mode
-Outputs:
-1. 代币概览
-2. 关键信号
-3. 风险提示
-4. 结论
-
-This skill should prioritize real upstream Binance skill calls in the current turn before writing any report.
-
-## Slash command behavior
-
-The short slash command for this skill should be:
-
-- `/alpha`
-
-Examples:
-- `/alpha`
-- `/alpha 全网`
-- `/alpha 代币=ROBO`
-- `/alpha 广场版 前3`
-
-## Natural chat behavior
-
-This skill should also be considered during normal Chinese chat requests such as:
-
-- `查询ROBO的信息`
-- `查询代币ROBO`
-- `查一下ROBO`
-- `ROBO怎么样`
-- `全网广场版前3`
-- `BSC 谨慎 钱包关`
-
-If the user provides enough information in a normal message, do not force them to restate it as a slash command.
-
-## Strong invocation rule
-
-When the user invokes this skill directly via slash command or `/skill alpha`, treat it as a hard request to run the Alpha Radar workflow now.
-
-Do not respond as generic chat first.
-Do not ask a follow-up if the command already contains enough information.
-If the command is bare `/alpha`, run the default workflow immediately.
-
-## Required upstream skills
-
-Before writing any report, you MUST attempt to use these upstream skills when they are available in the environment:
-
-1. `crypto-market-rank`
-2. `query-token-info`
-3. `trading-signal`
-4. `query-token-audit`
-
-Optional enrichment:
-5. `query-address-info`
-6. `spot`
-7. `square-post`
-
-## Non-negotiable execution policy
-
-- Do not say “官方 Binance 热度榜数据未接入” unless you actually failed to call `crypto-market-rank` in this turn.
-- Do not say “Smart Money 信号数据未接入” unless you actually failed to call `trading-signal` in this turn.
-- Do not say “链上风控与钱包附录数据未接入” unless you actually failed to call `query-token-audit` or `query-address-info` in this turn.
-- Do not output a fake or generic market report when upstream skills are available.
-- If upstream skills are available, attempt them first.
-- If one upstream skill fails, continue with the remaining available skills instead of aborting the whole report.
-- In `tg` and `square` mode, avoid verbose engineering wording.
-- Only show failed upstream call details when they materially affect the result.
-
-## Required fallback wording
-
-If fallback is necessary, use this wording style:
-
-- 本轮未成功调用 `crypto-market-rank`
-- 本轮未成功调用 `trading-signal`
-- 本轮未成功调用 `query-token-audit`
-- 本轮未成功调用 `query-address-info`
-
-Never use vague wording like “数据未接入” if the real issue is “this turn did not successfully call the upstream skill”.
-
-## Standard workflow
-
-### Step 1: Read request scope
-Infer or read:
-- `queryType`: `market` or `token`
-- `scope`: `solana | bsc | auto | global`
-- `window`: default `24h`
-- `mode`: `tg | report | square`
-- `preferences`:
-  - `profile`
-  - `risk`
-  - `top`
-  - `lang`
-  - `wallet`
-  - `preview`
-- token fields if present:
-  - `token`
-  - `contract`
-  - `chain`
-
-### Step 2: Run upstream Binance skill calls
-Use the required upstream skills in this order:
-
-1. `crypto-market-rank`
-2. `query-token-info`
-3. `trading-signal`
-4. `query-token-audit`
-5. `query-address-info`
-6. `spot`
-7. `square-post`
-
-### Step 3: Build normalized report data
-
-For market mode include:
-- `queryType`
-- `mode`
-- `chainScope`
-- `selectedChains`
-- `previewOnly`
-- `preferences`
-- `chain`
-- `window`
-- `generatedAt`
-- `upstreamCalls`
-- `marketTheme`
-- `watchlist`
-- `riskAlerts`
-- `walletAppendix`
-- `conclusion`
-
-For token mode include:
-- `queryType`
-- `tokenQuery`
-- `mode`
-- `previewOnly`
-- `preferences`
-- `chain`
-- `window`
-- `generatedAt`
-- `upstreamCalls`
-- `watchlist`
-- `riskAlerts`
-- `conclusion`
-
-### Step 4: Render report
-
-For Telegram-friendly short preview:
+安装依赖：
 
 ```bash
-node {baseDir}/scripts/render-report.js --input <json-path> --style tg
+npm install
 ```
 
-For full report:
+生成完整版示例：
 
 ```bash
-node {baseDir}/scripts/render-report.js --input <json-path> --style report
+npm run report
 ```
 
-For Square preview:
+生成广场版示例：
 
 ```bash
-node {baseDir}/scripts/render-report.js --input <json-path> --style square
+npm run square
 ```
 
-## Output discipline
+验证输入而不渲染：
 
-- Prefer short actionable output in `tg` mode.
-- Prefer expanded explanation in `report` mode.
-- Prefer posting-friendly copy in `square` mode.
-- Never ask the user to repeat the chain unless truly ambiguous.
-- Never pretend upstream data was used when it was not.
-- Never silently skip upstream Binance skills when they are available.
-- If all required upstream skills fail, output a clearly labeled fallback preview, not a fake finished report.
+```bash
+npm run validate
+```
 
-## Square mode rules
+跑一遍 smoke：
 
-In `square` mode:
-- Do not output long sections like “本轮已依次调用……”
-- Do not output verbose engineering wording
-- Prefer a directly postable format:
-  - 标题
-  - 主线 / 代币结论
-  - Top 3 或代币看点
-  - 风险
-  - 结论
-  - DYOR
-- Keep it readable as a standalone pure-text Binance Square post
+```bash
+npm run smoke
+```
 
-## Publish safety
+## 目录
 
-- Never publish to Binance Square unless the user explicitly asks to publish.
-- Preview first by default.
-- Even after generating a Square draft, do not publish without confirmation.
+- `SKILL.md`：技能定义
+- `src/render.js`：TG / Report / Square 渲染
+- `src/schema.js`：数据 schema
+- `scripts/render-report.js`：CLI、参数解析、自然语言命令解析
+- `scripts/fetch-binance-public.js`：Binance 公共 API 数据抓取
+- `scripts/smoke.js`：生成示例输出
+- `docs/DATA_SCHEMA.zh-CN.md`：最新数据结构文档
+- `examples/sample-data.json`：示例输入
+
+## 说明
+
+当前 `lang` 仅保留 `zh`。之前 schema 暴露了 `en`，但渲染文案并没有真正多语言实现，属于误导性配置，这里已经收口。
