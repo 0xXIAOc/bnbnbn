@@ -1,12 +1,13 @@
+cat > ~/alpha-radar-openclaw-skill/SKILL.md <<'EOF'
 ---
 name: alpha
 description: Use this skill when the user asks to generate a Binance daily market report, BSC/Base/Solana report, global report, Watchlist Delta Report, Alpha Radar report, token report, risk alert report, smart money appendix, or Binance Square preview. Trigger strongly on Chinese requests like “生成今日日报”, “按 Alpha Radar 模板生成日报”, “生成全网 watchlist”, “生成风险警报”, “生成 Binance Square 预览”, “只预览不发广场”, “给我一个短版”, “给我一个 TG 版”, “查询ROBO的信息”, “查询代币ROBO”, “查一下ROBO”, “ROBO怎么样”, “全网广场版前3”, “Alpha 有哪些功能”, “怎么用 alpha”, “/alpha 帮助”.
-metadata: {"version":"1.0.1","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
+metadata: {"version":"1.0.1-optimized","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
 homepage: https://github.com/0xXIAOc/alpha-radar-openclaw-skill
 user-invocable: true
 ---
 
-# Alpha Radar Report v1.0.1
+# Alpha Radar Report v1.0.1-optimized
 
 ## Default behavior
 
@@ -33,6 +34,8 @@ Meaning:
 - `solana`: only Solana
 - `bsc`: only BSC
 - `base`: only Base
+- `eth`: only ETH
+- `ethereum`: only Ethereum
 - `auto`: compare Solana / BSC / Base first, then merge into one report
 - `global`: use all available supported chains from upstream Binance skills, then output one merged report
 
@@ -83,6 +86,8 @@ Interpret these naturally:
 - `solana` / `索拉纳` = `scope=solana`
 - `bsc` = `scope=bsc`
 - `base` = `scope=base`
+- `eth` = `scope=eth`
+- `ethereum` = `scope=ethereum`
 
 ### 模式
 - `预览` / `短版` / `TG版` = `mode=tg`
@@ -103,10 +108,14 @@ Interpret these naturally:
 - `热度开` / `热度关`
 - `钱包热度开` / `钱包热度关`
 - `meme开` / `meme关`
+- `衍生品开` / `衍生品关`
 
 ### 数量
 - `前3` = `top=3`
 - `前5` = `top=5`
+- `前三` = `top=3`
+- `前五` = `top=5`
+- `前十` = `top=10`
 
 ### 广场署名
 - `署名开` = `squareDisclosureEnabled=true`
@@ -124,33 +133,16 @@ Interpret these naturally:
 
 Alpha Radar turns upstream Binance skill outputs into a stable research workflow.
 
-It has three major modes:
+This skill has three major modes:
 
 ### 1. Market mode
-Outputs:
-1. 主线一句话
-2. 现货涨幅前三
-3. 现货跌幅前三
-4. 交易所热度前三
-5. 钱包热度前三
-6. Meme 雷达
-7. 值得看 Top
-8. 风险
-9. 结论
+Generate a market report from normalized data and renderer output.
 
 ### 2. Token mode
-Outputs:
-1. 代币概览
-2. 关键信号
-3. 风险提示
-4. 结论
+Generate a token report from normalized data and renderer output.
 
 ### 3. Help mode
-Outputs:
-1. 可用功能
-2. 常用命令
-3. 普通聊天示例
-4. 偏好选项
+Generate the help card / command guide / preference guide from normalized data and renderer output.
 
 This skill should prioritize real upstream Binance skill calls in the current turn before writing any report.
 
@@ -195,7 +187,7 @@ If the command is bare `/alpha`, run the default workflow immediately.
 
 ## Required upstream skills
 
-Before writing any report, you MUST attempt to use these upstream skills when they are available in the environment:
+Before writing any report, you MUST attempt to use these upstream skills when they are available in the environment and relevant to the current request:
 
 1. `spot`
 2. `crypto-market-rank`
@@ -230,24 +222,20 @@ Use upstream skills like this:
 - `square-post`
   - Binance Square 发文
 
-## TG mode rules
+## Critical execution rule
 
-In `tg` mode, the output should feel like a trader dashboard, not a long research article.
+When `render-report.js` succeeds, you MUST return its stdout directly as the final answer.
 
-Always keep this structure in market mode:
+Do not:
+- rewrite it
+- summarize it
+- reformat it into another template
+- add your own section titles
+- inject legacy report labels
+- add “如果你要，我下一条可以继续……” or similar follow-up copy
+- add extra intro or outro text outside the script output
 
-- 标题
-- 主线一句话
-- 现货涨幅前三
-- 现货跌幅前三
-- 交易所热度前三
-- 钱包热度前三
-- Meme 雷达
-- 值得看 Top
-- 风险
-- 一句话结论
-
-Do not append “如果你要，我下一条可以继续……” unless the user explicitly asks for follow-ups.
+The renderer output is the source of truth for final formatting.
 
 ## Mandatory market-mode rendering rules
 
@@ -268,6 +256,7 @@ Likewise:
 - 交易所热度前三 depends primarily on `crypto-market-rank`
 - 钱包热度前三 depends primarily on `crypto-market-rank`
 - Meme 雷达 depends primarily on `meme-rush`
+- 衍生品情绪 depends primarily on `trading-signal` or normalized `futuresSentiment`
 
 If any of those upstream calls fail, keep the section visible and explicitly mark the missing source instead of silently omitting the section.
 
@@ -281,6 +270,8 @@ If any of those upstream calls fail, keep the section visible and explicitly mar
 - If one upstream skill fails, continue with the remaining available skills instead of aborting the whole report.
 - In `tg` and `square` mode, avoid verbose engineering wording.
 - Only show failed upstream call details when they materially affect the result.
+- Never pretend Binance page-aligned leaderboards were used if the actual source was only public ticker sorting.
+- If the result came from public ticker rough sorting, phrase it as rough sorting or public ticker-based ranking, not “page-aligned ranking”.
 
 ## Required fallback wording
 
@@ -291,6 +282,7 @@ If fallback is necessary, use this wording style:
 - 本轮未成功调用 `trading-signal`
 - 本轮未成功调用 `query-token-audit`
 - 本轮未成功调用 `query-address-info`
+- 本轮未成功调用 `meme-rush`
 
 Never use vague wording like “数据未接入” if the real issue is “this turn did not successfully call the upstream skill”.
 
@@ -310,7 +302,7 @@ When `mode=square` and the user asks to generate or publish a Square draft:
 ### Step 1: Read request scope
 Infer or read:
 - `queryType`: `market` or `token` or `help`
-- `scope`: `solana | bsc | base | auto | global`
+- `scope`: `solana | bsc | base | eth | ethereum | auto | global`
 - `window`: default `24h`
 - `mode`: `tg | report | square`
 - `preferences`:
@@ -324,6 +316,7 @@ Infer or read:
   - `showExchangeHot`
   - `showWalletHot`
   - `showMemeRadar`
+  - `showFuturesSentiment`
   - `squareDisclosureEnabled`
   - `squareDisclosureAskEveryTime`
 - token fields if present:
@@ -332,7 +325,7 @@ Infer or read:
   - `chain`
 
 ### Step 2: Run upstream Binance skill calls
-Use the required upstream skills in this order:
+Use the required upstream skills in this order when relevant and available:
 
 1. `spot`
 2. `crypto-market-rank`
@@ -360,7 +353,7 @@ For market mode include:
 - `spotLeaderboards`
 - `leaderboards`
 - `memeRadar`
-- futuresSentiment`
+- `futuresSentiment`
 - `watchlist`
 - `riskAlerts`
 - `walletAppendix`
@@ -392,51 +385,3 @@ For Telegram-friendly short preview:
 
 ```bash
 node {baseDir}/scripts/render-report.js --input <json-path> --style tg
-```
-
-For full report:
-
-```bash
-node {baseDir}/scripts/render-report.js --input <json-path> --style report
-```
-
-For Square preview:
-
-```bash
-node {baseDir}/scripts/render-report.js --input <json-path> --style square
-```
-
-## Output discipline
-
-- Prefer short actionable output in `tg` mode.
-- Prefer expanded explanation in `report` mode.
-- Prefer posting-friendly copy in `square` mode.
-- Never ask the user to repeat the chain unless truly ambiguous.
-- Never pretend upstream data was used when it was not.
-- Never silently skip upstream Binance skills when they are available.
-- If all required upstream skills fail, output a clearly labeled fallback preview, not a fake finished report.
-
-## Square mode rules
-
-In `square` mode:
-- Do not output long sections like “本轮已依次调用……”
-- Do not output verbose engineering wording
-- Prefer a directly postable format:
-  - 标题
-  - 主线
-  - 现货涨幅前三
-  - 现货跌幅前三
-  - 交易所热度前三
-  - 钱包热度前三
-  - Meme 雷达（如有）
-  - Top 3
-  - 风险
-  - 结论
-  - DYOR
-- Keep it readable as a standalone pure-text Binance Square post
-
-## Publish safety
-
-- Never publish to Binance Square unless the user explicitly asks to publish.
-- Preview first by default.
-- Even after generating a Square draft, do not publish without confirmation.
