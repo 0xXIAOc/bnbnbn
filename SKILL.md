@@ -234,7 +234,7 @@ Use upstream skills like this:
 
 In `tg` mode, the output should feel like a trader dashboard, not a long research article.
 
-Prefer this structure:
+Always keep this structure in market mode:
 
 - 标题
 - 主线一句话
@@ -248,6 +248,28 @@ Prefer this structure:
 - 一句话结论
 
 Do not append “如果你要，我下一条可以继续……” unless the user explicitly asks for follow-ups.
+
+## Mandatory market-mode rendering rules
+
+In `market` mode, you MUST attempt to call `spot` before generating:
+
+- 现货涨幅前三
+- 现货跌幅前三
+
+Do not substitute `crypto-market-rank` results for spot leaderboards.
+
+If `spot` fails or returns no usable result, the output must still render those two sections and explicitly say:
+
+- 现货涨幅前三：本轮未成功调用 `spot`
+- 现货跌幅前三：本轮未成功调用 `spot`
+
+Likewise:
+
+- 交易所热度前三 depends primarily on `crypto-market-rank`
+- 钱包热度前三 depends primarily on `crypto-market-rank`
+- Meme 雷达 depends primarily on `meme-rush`
+
+If any of those upstream calls fail, keep the section visible and explicitly mark the missing source instead of silently omitting the section.
 
 ## Non-negotiable execution policy
 
