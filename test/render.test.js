@@ -89,7 +89,8 @@ test('Report mode no longer renders exchange and wallet hot sections', () => {
   const text = renderReport(data);
   assert.doesNotMatch(text, /## 交易所热度前三/);
   assert.doesNotMatch(text, /## 钱包热度前三/);
+  assert.doesNotMatch(text, /## Meme 雷达/);
   assert.match(text, /## Alpha 24h 成交量前 3/);
   assert.match(text, /## U 本位当前资金费最高 TOP 1/);
-  assert.match(text, /## Meme 雷达/);
+  assert.match(text, /## 衍生品情绪/);
 });
