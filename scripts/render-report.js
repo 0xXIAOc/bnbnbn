@@ -50,6 +50,14 @@ function parseArgs(argv) {
       args.disclosure = argv[++i];
     } else if (token === '--ask-disclosure') {
       args.askDisclosure = argv[++i];
+    } else if (token === '--show-spot') {
+      args.showSpot = argv[++i];
+    } else if (token === '--show-exchange-hot') {
+      args.showExchangeHot = argv[++i];
+    } else if (token === '--show-wallet-hot') {
+      args.showWalletHot = argv[++i];
+    } else if (token === '--show-meme') {
+      args.showMeme = argv[++i];
     } else if (token === '--command') {
       args.command = argv[++i];
     } else if (token === '--help' || token === '-h') {
@@ -71,24 +79,28 @@ function usage() {
     '  cat data.json | node scripts/render-report.js --style tg',
     '',
     'Options:',
-    '  --input <path>          JSON input file. Omit to read from stdin.',
-    '  --style <style>         tg | report | square',
-    '  --output <path>         Write output to file.',
-    '  --title <title>         Override report title.',
-    '  --scope <scope>         auto | global | solana | bsc | base | eth',
-    '  --chain <chain>         Override human-readable chain label.',
-    '  --window <window>       Override time window, e.g. 24h.',
-    '  --preview <bool>        true | false',
-    '  --profile <value>       cautious | balanced | aggressive',
-    '  --risk <value>          low | balanced | high',
-    '  --top <n>               shortlist size',
-    '  --lang <value>          zh | en',
-    '  --wallet <bool>         true | false',
-    '  --token <value>         token symbol/name',
-    '  --contract <value>      contract address',
-    '  --disclosure <bool>     square disclosure on/off',
-    '  --ask-disclosure <bool> ask every time on/off',
-    '  --command "<raw>"       parse Chinese aliases from raw command'
+    '  --input <path>            JSON input file. Omit to read from stdin.',
+    '  --style <style>           tg | report | square',
+    '  --output <path>           Write output to file.',
+    '  --title <title>           Override report title.',
+    '  --scope <scope>           auto | global | solana | bsc | base | eth',
+    '  --chain <chain>           Override human-readable chain label.',
+    '  --window <window>         Override time window, e.g. 24h.',
+    '  --preview <bool>          true | false',
+    '  --profile <value>         cautious | balanced | aggressive',
+    '  --risk <value>            low | balanced | high',
+    '  --top <n>                 shortlist size',
+    '  --lang <value>            zh | en',
+    '  --wallet <bool>           true | false',
+    '  --token <value>           token symbol/name',
+    '  --contract <value>        contract address',
+    '  --disclosure <bool>       square disclosure on/off',
+    '  --ask-disclosure <bool>   ask every time on/off',
+    '  --show-spot <bool>        show spot gainers/losers',
+    '  --show-exchange-hot <bool>',
+    '  --show-wallet-hot <bool>',
+    '  --show-meme <bool>',
+    '  --command "<raw>"         parse Chinese aliases from raw command'
   ].join('\n');
 }
 
@@ -131,6 +143,7 @@ function normalizeScope(value) {
   if (normalized === '自动' || normalized === 'auto') return 'auto';
   if (normalized === 'sol' || normalized === 'solana' || normalized === '索拉纳') return 'solana';
   if (normalized === 'bsc') return 'bsc';
+  if (normalized === 'base') return 'base';
   if (normalized === 'ethereum') return 'ethereum';
   if (normalized === 'eth') return 'eth';
 
@@ -186,6 +199,7 @@ function parseNaturalCommand(raw) {
   if (/(^|\s)(自动)(\s|$)/.test(text)) result.scope = 'auto';
   if (/(^|\s)(solana|索拉纳)(\s|$)/i.test(text)) result.scope = 'solana';
   if (/(^|\s)(bsc)(\s|$)/i.test(text)) result.scope = 'bsc';
+  if (/(^|\s)(base)(\s|$)/i.test(text)) result.scope = 'base';
 
   if (/(^|\s)(预览|短版|TG版)(\s|$)/.test(text)) result.style = 'tg';
   if (/(^|\s)(完整版|长版)(\s|$)/.test(text)) result.style = 'report';
@@ -197,6 +211,15 @@ function parseNaturalCommand(raw) {
 
   if (/(^|\s)(钱包关|不看钱包)(\s|$)/.test(text)) result.wallet = 'false';
   if (/(^|\s)(钱包开|看钱包)(\s|$)/.test(text)) result.wallet = 'true';
+
+  if (/(^|\s)(现货关)(\s|$)/.test(text)) result.showSpot = 'false';
+  if (/(^|\s)(现货开)(\s|$)/.test(text)) result.showSpot = 'true';
+  if (/(^|\s)(热度关)(\s|$)/.test(text)) result.showExchangeHot = 'false';
+  if (/(^|\s)(热度开)(\s|$)/.test(text)) result.showExchangeHot = 'true';
+  if (/(^|\s)(钱包热度关)(\s|$)/.test(text)) result.showWalletHot = 'false';
+  if (/(^|\s)(钱包热度开)(\s|$)/.test(text)) result.showWalletHot = 'true';
+  if (/(^|\s)(meme关)(\s|$)/i.test(text)) result.showMeme = 'false';
+  if (/(^|\s)(meme开)(\s|$)/i.test(text)) result.showMeme = 'true';
 
   if (/(^|\s)(署名开)(\s|$)/.test(text)) result.disclosure = 'true';
   if (/(^|\s)(署名关)(\s|$)/.test(text)) result.disclosure = 'false';
@@ -284,6 +307,10 @@ function normalizeData(raw, args = {}) {
       ...(mergedArgs.top !== undefined ? { topN: normalizeTop(mergedArgs.top, validated.preferences?.topN || 3) } : {}),
       ...(mergedArgs.wallet !== undefined ? { wallet: normalizeBoolean(mergedArgs.wallet, validated.preferences?.wallet !== false) } : {}),
       ...(mergedArgs.preview !== undefined ? { preview: normalizeBoolean(mergedArgs.preview, validated.preferences?.preview !== false) } : {}),
+      ...(mergedArgs.showSpot !== undefined ? { showSpotLeaderboards: normalizeBoolean(mergedArgs.showSpot, validated.preferences?.showSpotLeaderboards !== false) } : {}),
+      ...(mergedArgs.showExchangeHot !== undefined ? { showExchangeHot: normalizeBoolean(mergedArgs.showExchangeHot, validated.preferences?.showExchangeHot !== false) } : {}),
+      ...(mergedArgs.showWalletHot !== undefined ? { showWalletHot: normalizeBoolean(mergedArgs.showWalletHot, validated.preferences?.showWalletHot !== false) } : {}),
+      ...(mergedArgs.showMeme !== undefined ? { showMemeRadar: normalizeBoolean(mergedArgs.showMeme, validated.preferences?.showMemeRadar !== false) } : {}),
       ...(mergedArgs.disclosure !== undefined ? { squareDisclosureEnabled: normalizeBoolean(mergedArgs.disclosure, validated.preferences?.squareDisclosureEnabled === true) } : {}),
       ...(mergedArgs.askDisclosure !== undefined ? { squareDisclosureAskEveryTime: normalizeBoolean(mergedArgs.askDisclosure, validated.preferences?.squareDisclosureAskEveryTime !== false) } : {})
     }
