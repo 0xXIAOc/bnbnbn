@@ -1,12 +1,12 @@
 ---
 name: alpha
-description: Use this skill when the user asks to generate a Binance daily market report, BSC/Base/Solana report, global report, Watchlist Delta Report, Alpha Radar report, token report, risk alert report, smart money appendix, or Binance Square preview. Trigger strongly on Chinese requests like “生成今日日报”, “按 Alpha Radar 模板生成日报”, “生成全网 watchlist”, “生成风险警报”, “生成 Binance Square 预览”, “只预览不发广场”, “给我一个短版”, “给我一个 TG 版”, “查询ROBO的信息”, “查询代币ROBO”, “查一下ROBO”, “ROBO怎么样”, “全网广场版前3”.
-metadata: {"version":"1.0.0","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
+description: Use this skill when the user asks to generate a Binance daily market report, BSC/Base/Solana report, global report, Watchlist Delta Report, Alpha Radar report, token report, risk alert report, smart money appendix, or Binance Square preview. Trigger strongly on Chinese requests like “生成今日日报”, “按 Alpha Radar 模板生成日报”, “生成全网 watchlist”, “生成风险警报”, “生成 Binance Square 预览”, “只预览不发广场”, “给我一个短版”, “给我一个 TG 版”, “查询ROBO的信息”, “查询代币ROBO”, “查一下ROBO”, “ROBO怎么样”, “全网广场版前3”, “Alpha 有哪些功能”, “怎么用 alpha”, “/alpha 帮助”.
+metadata: {"version":"1.0.1","author":"0xXIAOc","openclaw":{"requires":{"bins":["node"]},"emoji":"📊","homepage":"https://github.com/0xXIAOc/alpha-radar-openclaw-skill"}}
 homepage: https://github.com/0xXIAOc/alpha-radar-openclaw-skill
 user-invocable: true
 ---
 
-# Alpha Radar Report v1.0
+# Alpha Radar Report v1.0.1
 
 ## Default behavior
 
@@ -42,6 +42,7 @@ If the user does not specify a chain, prefer `auto`.
 
 - `market`: 全网 / 分链市场报告
 - `token`: 指定代币 / 指定合约报告
+- `help`: 功能总览 / 命令帮助 / 偏好说明
 
 If the user provides any of the following, switch to `token` mode:
 - `代币=...`
@@ -56,6 +57,13 @@ If the user provides any of the following, switch to `token` mode:
   - `查一下ROBO`
   - `看看ROBO`
   - `ROBO怎么样`
+
+If the user provides any of the following, switch to `help` mode:
+- `帮助`
+- `功能`
+- `Alpha 有哪些功能`
+- `怎么用 alpha`
+- `alpha怎么用`
 
 ## Mode definitions
 
@@ -116,7 +124,7 @@ Interpret these naturally:
 
 Alpha Radar turns upstream Binance skill outputs into a stable research workflow.
 
-It has two major modes:
+It has three major modes:
 
 ### 1. Market mode
 Outputs:
@@ -137,6 +145,13 @@ Outputs:
 3. 风险提示
 4. 结论
 
+### 3. Help mode
+Outputs:
+1. 可用功能
+2. 常用命令
+3. 普通聊天示例
+4. 偏好选项
+
 This skill should prioritize real upstream Binance skill calls in the current turn before writing any report.
 
 ## Slash command behavior
@@ -152,6 +167,7 @@ Examples:
 - `/alpha 代币=ROBO`
 - `/alpha 广场版 前3`
 - `/alpha 全网 广场版 署名关 不再询问`
+- `/alpha 帮助`
 
 ## Natural chat behavior
 
@@ -164,6 +180,8 @@ This skill should also be considered during normal Chinese chat requests such as
 - `全网广场版前3`
 - `BSC 谨慎 钱包关`
 - `Base 热度前三`
+- `Alpha 有哪些功能`
+- `怎么用 alpha`
 
 If the user provides enough information in a normal message, do not force them to restate it as a slash command.
 
@@ -269,7 +287,7 @@ When `mode=square` and the user asks to generate or publish a Square draft:
 
 ### Step 1: Read request scope
 Infer or read:
-- `queryType`: `market` or `token`
+- `queryType`: `market` or `token` or `help`
 - `scope`: `solana | bsc | base | auto | global`
 - `window`: default `24h`
 - `mode`: `tg | report | square`
@@ -338,6 +356,12 @@ For token mode include:
 - `watchlist`
 - `riskAlerts`
 - `conclusion`
+
+For help mode include:
+- `queryType`
+- `mode`
+- `preferences`
+- `helpCards`
 
 ### Step 4: Render report
 
