@@ -26,6 +26,7 @@ const PreferencesSchema = z
     showExchangeHot: z.boolean().default(true),
     showWalletHot: z.boolean().default(true),
     showMemeRadar: z.boolean().default(true),
+    showFuturesSentiment: z.boolean().default(true),
     squareDisclosureEnabled: z.boolean().default(false),
     squareDisclosureAskEveryTime: z.boolean().default(true)
   })
@@ -40,6 +41,7 @@ const PreferencesSchema = z
     showExchangeHot: true,
     showWalletHot: true,
     showMemeRadar: true,
+    showFuturesSentiment: true,
     squareDisclosureEnabled: false,
     squareDisclosureAskEveryTime: true
   });
